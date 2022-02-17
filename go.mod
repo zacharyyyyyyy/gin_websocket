@@ -4,12 +4,13 @@ go 1.15
 
 require (
 	github.com/fvbock/endless v0.0.0-20170109170031-447134032cb6 // indirect
-	github.com/gin-gonic/gin v1.7.7 // indirect
+	github.com/gin-contrib/gzip v0.0.5 // indirect
+	github.com/gin-gonic/gin v1.7.7
 	github.com/go-ini/ini v1.66.3 // indirect
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
 	github.com/go-redis/redis v6.15.9+incompatible // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/gorilla/websocket v1.4.2
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-sqlite3 v1.14.10 // indirect
