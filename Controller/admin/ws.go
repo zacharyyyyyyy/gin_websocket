@@ -8,6 +8,9 @@ import (
 )
 
 func Link(c *gin.Context) {
+	if !websocket.IsWebSocketUpgrade(c.Request) {
+		c.JSON(http.StatusOK, gin.H{"message": "非websocket", "status": 0})
+	}
 	var upGrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -42,5 +45,5 @@ func Link(c *gin.Context) {
 }
 
 func Ping(c *gin.Context) {
-
+	c.JSON(http.StatusOK, gin.H{"message": "success"})
 }
