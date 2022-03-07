@@ -1,16 +1,21 @@
 package websocket
 
 import (
+	"context"
 	"errors"
-	"github.com/gorilla/websocket"
+	"fmt"
+	"gin_websocket/Lib/Logger"
 	"net/http"
 	"sync"
+	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type WsContainer struct {
 	WebSocketClientMap map[WsKey]UserClient
-	lock               *sync.Mutex
-	WebSocketCont      int
+	lock               *sync.RWMutex
+	webSocketCont      int
 }
 
 var (
@@ -28,20 +33,30 @@ var (
 	SendMsgErr        = errors.New("发送消息失败")
 )
 
-func init() {
+var (
+	pingLastTimeSec = 60
+	chatLastTimeSec = 180
+)
+
+func Start(ctx context.Context) *WsContainer {
 	client := make(map[WsKey]UserClient, 0)
 	WsContainerHandle = &WsContainer{
 		WebSocketClientMap: client,
-		lock:               &sync.Mutex{},
-		WebSocketCont:      0,
+		lock:               &sync.RWMutex{},
+		webSocketCont:      0,
 	}
+	return WsContainerHandle
+}
+
+func (Cont WsContainer) GetConnCount() int {
+	return Cont.webSocketCont
 }
 
 func (Cont *WsContainer) Append(userClient UserClient) {
 	Cont.lock.Lock()
 	defer Cont.lock.Unlock()
 	Cont.WebSocketClientMap[userClient.Id] = userClient
-	Cont.WebSocketCont++
+	Cont.webSocketCont++
 }
 func (Cont *WsContainer) Remove(userClient UserClient) error {
 	Cont.lock.Lock()
@@ -55,11 +70,27 @@ func (Cont *WsContainer) Remove(userClient UserClient) error {
 		return err
 	}
 	delete(Cont.WebSocketClientMap, userClient.Id)
-	Cont.WebSocketCont--
+	Cont.webSocketCont--
 	return nil
 }
 
 //定时释放webcoket
-func CleanClient() {
-	//TODO
+func (Cont *WsContainer) CleanClient(ctx context.Context, timeDuration time.Duration) {
+
+	timeTicker := time.NewTicker(timeDuration)
+	defer timeTicker.Stop()
+	for {
+		select {
+		case <-timeTicker.C:
+			for _, userClient := range WsContainerHandle.WebSocketClientMap {
+				err := userClient.timeout()
+				errString := fmt.Sprintf("websocket timeout func err:%s", err)
+				Logger.Service.Error(errString)
+			}
+			timeTicker.Reset(timeDuration)
+		case <-ctx.Done():
+			Logger.Service.Info("websocket Cleanclient Func close")
+			return
+		}
+	}
 }

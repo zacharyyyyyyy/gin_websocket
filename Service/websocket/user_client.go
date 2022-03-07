@@ -21,8 +21,8 @@ type UserClient struct {
 	LastTime     time.Time
 	ChatLastTime time.Time
 	Ip           string
-	Ctx          context.Context
-	Lock         *sync.Mutex
+	ctx          context.Context
+	lock         *sync.Mutex
 }
 
 func NewUser(ctx, c *gin.Context) (*UserClient, error) {
@@ -38,8 +38,8 @@ func NewUser(ctx, c *gin.Context) (*UserClient, error) {
 		conn:     ws,
 		LastTime: time.Now(),
 		Ip:       c.ClientIP(),
-		Ctx:      ctx,
-		Lock:     &sync.Mutex{},
+		ctx:      ctx,
+		lock:     &sync.Mutex{},
 	}, nil
 }
 
@@ -50,7 +50,7 @@ func (user *UserClient) Close() error {
 	}
 	return nil
 }
-func (user *UserClient) Send(msg Message) error {
+func (user *UserClient) send(msg Message) error {
 	var mesTest = make(map[string]interface{}, 0)
 	mesTest["content"] = msg.Content
 	mesTest["send_time"] = msg.SendTime.Format("2006-01-02 15:04:05")
@@ -61,11 +61,19 @@ func (user *UserClient) Send(msg Message) error {
 	}
 	return nil
 }
-func (user *UserClient) Receive() {
+func (user *UserClient) receive() {
 	user.ChatLastTime = time.Now()
 	//Todo
 }
 
-func (user *UserClient) Ping() {
+func (user *UserClient) ping() {
 	user.LastTime = time.Now()
+}
+
+//超时关闭
+func (user *UserClient) timeout() error {
+	if user.LastTime.Unix() < (time.Now().Unix()-int64(pingLastTimeSec)) || user.ChatLastTime.Unix() < (time.Now().Unix()-int64(chatLastTimeSec)) {
+		//TODO
+	}
+	return nil
 }

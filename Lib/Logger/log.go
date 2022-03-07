@@ -21,6 +21,7 @@ var (
 
 var (
 	Api     = Get("api")
+	Service = Get("service")
 	Runtime = Get("runtime")
 )
 
