@@ -1,10 +1,10 @@
 package main
 
 import (
-	"gin_websocket/Router"
+	"gin_websocket/router"
 )
 
 func main() {
-	handler := Router.InitRouter()
+	handler := router.InitRouter()
 	handler.Run(":8086")
 }

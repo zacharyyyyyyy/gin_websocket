@@ -1,7 +1,7 @@
 package test
 
 import (
-	"gin_websocket/Router"
+	"gin_websocket/router"
 	jsoniter "github.com/json-iterator/go"
 	"gotest.tools/assert"
 	"net/http"
@@ -12,7 +12,7 @@ import (
 )
 
 func TestSyncTestHandler(t *testing.T) {
-	router := Router.InitRouter()
+	router := router.InitRouter()
 	urlString := url.Values{}
 	urlTest, _ := url.Parse("/admin/ping")
 	//urlString.Set("")

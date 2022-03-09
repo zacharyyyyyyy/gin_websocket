@@ -1,11 +1,10 @@
-package Logger
+package logger
 
 import (
 	"fmt"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
-	"os"
 	"sync"
 	"time"
 )
@@ -66,31 +65,6 @@ func getEncoder() zapcore.Encoder {
 }
 func logTimeFormat(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendString(t.Format("[2006-01-02 15:04:05]"))
-}
-func getFileHandle() (file *os.File, err error) {
-	var logFile *os.File
-	var fileErr error
-	timeDate := time.Now()
-	timeDateFormat := timeDate.Format("20060102")
-	base_path, _ := os.Getwd()
-	fileName := base_path + "log/log" + timeDateFormat
-	fmt.Println(fileName)
-	_, statErr := os.Stat(fileName)
-
-	if statErr != nil {
-		if os.IsNotExist(statErr) {
-			logFile, fileErr = os.Create(fileName)
-			if fileErr != nil {
-				fmt.Println("create file fail")
-			}
-		}
-	} else {
-		logFile, fileErr = os.OpenFile(fileName, os.O_APPEND, 0644)
-		if fileErr != nil {
-			fmt.Println("create file fail")
-		}
-	}
-	return logFile, fileErr
 }
 
 func (l *Logger) Debug(msg string) {

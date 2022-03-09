@@ -1,7 +1,7 @@
-package Router
+package router
 
 import (
-	"gin_websocket/Controller/admin"
+	"gin_websocket/controller/admin"
 	"github.com/gin-gonic/gin"
 )
 

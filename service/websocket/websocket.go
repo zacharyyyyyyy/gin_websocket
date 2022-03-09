@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gin_websocket/Lib/Logger"
+	"gin_websocket/lib/logger"
 	"net/http"
 	"sync"
 	"time"
@@ -85,11 +85,11 @@ func (Cont *WsContainer) CleanClient(ctx context.Context, timeDuration time.Dura
 			for _, userClient := range WsContainerHandle.WebSocketClientMap {
 				err := userClient.timeout()
 				errString := fmt.Sprintf("websocket timeout func err:%s", err)
-				Logger.Service.Error(errString)
+				logger.Service.Error(errString)
 			}
 			timeTicker.Reset(timeDuration)
 		case <-ctx.Done():
-			Logger.Service.Info("websocket Cleanclient Func close")
+			logger.Service.Info("websocket Cleanclient Func close")
 			return
 		}
 	}
