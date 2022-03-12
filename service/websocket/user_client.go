@@ -25,13 +25,13 @@ type UserClient struct {
 	lock         *sync.Mutex
 }
 
-func NewUser(ctx, c *gin.Context) (*UserClient, error) {
+func newUser(ctx context.Context, c *gin.Context) (*UserClient, error) {
 	if websocket.IsWebSocketUpgrade(c.Request) {
 		return nil, WrongConnErr
 	}
 	ws, err := upGrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		return nil, err
+		return nil, ClientBuildFailErr
 	}
 	return &UserClient{
 		Id:       WsKey(c.Request.Header.Get("Sec-Websocket-Key")),
@@ -43,8 +43,18 @@ func NewUser(ctx, c *gin.Context) (*UserClient, error) {
 	}, nil
 }
 
-func (user *UserClient) Close() error {
-	err := user.conn.Close()
+func (user *UserClient) close() error {
+	closeMsg := Message{
+		Id:           nil,
+		Content:      "当前聊天结束",
+		SendTime:     time.Now(),
+		WebsocketKey: user.Id,
+	}
+	err := user.send(closeMsg)
+	if err != nil {
+		return err
+	}
+	err = user.conn.Close()
 	if err != nil {
 		return ClientNotFoundErr
 	}
@@ -73,7 +83,10 @@ func (user *UserClient) ping() {
 //超时关闭
 func (user *UserClient) timeout() error {
 	if user.LastTime.Unix() < (time.Now().Unix()-int64(pingLastTimeSec)) || user.ChatLastTime.Unix() < (time.Now().Unix()-int64(chatLastTimeSec)) {
-		//TODO
+		err := user.close()
+		if err != nil {
+			return ClientNotFoundErr
+		}
 	}
 	return nil
 }
