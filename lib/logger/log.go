@@ -39,7 +39,7 @@ func Get(filename string) *Logger {
 		return l
 	}
 	encoder := getEncoder()
-	writeSyncer := getLogWriter(fmt.Sprintf("%s/%s/", "Log", filename))
+	writeSyncer := getLogWriter(fmt.Sprintf("%s/%s/", "log", filename))
 	core := zapcore.NewCore(encoder, writeSyncer, zapcore.DebugLevel)
 	loggers[filename] = &Logger{zap.New(core, zap.AddCaller())}
 	return loggers[filename]
