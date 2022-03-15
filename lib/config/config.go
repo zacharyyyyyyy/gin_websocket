@@ -16,7 +16,8 @@ type ConfMap interface {
 type baseConf struct {
 	lock sync.RWMutex
 
-	wsConf WebsocketConf
+	wsConf    WebsocketConf
+	redisConf RedisConf
 }
 
 var BaseConf = &baseConf{}
@@ -35,6 +36,7 @@ func (ConfHandle *baseConf) Load() {
 	defer BaseConf.lock.Unlock()
 	var (
 		wsConf = &WebsocketConf{}
+		rdConf = &RedisConf{}
 	)
 	if cfg, err := match(wsConf); err == nil {
 		err := cfg.MapTo(wsConf)
@@ -43,6 +45,15 @@ func (ConfHandle *baseConf) Load() {
 			logger.Service.Error(errString)
 		} else {
 			BaseConf.wsConf = *wsConf
+		}
+	}
+	if cfg, err := match(rdConf); err == nil {
+		err := cfg.MapTo(rdConf)
+		if err != nil {
+			errString := fmt.Sprintf("%s:%s", IniSectionNotFoundErr, wsConf.getSectionName())
+			logger.Service.Error(errString)
+		} else {
+			BaseConf.redisConf = *rdConf
 		}
 	}
 }
@@ -63,4 +74,9 @@ func (ConfHandle *baseConf) GetWsConf() WebsocketConf {
 	ConfHandle.lock.RLock()
 	defer ConfHandle.lock.RUnlock()
 	return ConfHandle.wsConf
+}
+func (ConfHandle *baseConf) GetRedisConf() RedisConf {
+	ConfHandle.lock.RLock()
+	defer ConfHandle.lock.RUnlock()
+	return ConfHandle.redisConf
 }

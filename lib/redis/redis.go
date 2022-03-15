@@ -1,6 +1,8 @@
 package redis
 
 import (
+	"fmt"
+	"gin_websocket/lib/config"
 	"github.com/go-redis/redis"
 	"time"
 )
@@ -12,10 +14,11 @@ type redisClient struct {
 var RedisDb redisClient
 
 func init() {
+	redisConf := config.BaseConf.GetRedisConf()
 	client := redis.NewClient(&redis.Options{
-		Addr:     "",
-		Password: "",
-		DB:       0,
+		Addr:     fmt.Sprintf("%s:%s", redisConf.Host, redisConf.Port),
+		Password: redisConf.Password,
+		DB:       redisConf.Db,
 	})
 	RedisDb = redisClient{client: client}
 }
