@@ -5,10 +5,10 @@ type WebsocketConf struct {
 	ChatLastTimeSec int
 }
 
-func (WsConf *ConfHandle) MapTo() {
-
+func (WsConf WebsocketConf) getPath() string {
+	return "conf/config.ini"
 }
 
-func (WsConf ConfHandle) getPath() string {
-	return "conf/config.ini"
+func (WsConf WebsocketConf) getSectionName() string {
+	return "Websocket"
 }
