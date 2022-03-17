@@ -61,10 +61,10 @@ func (user *UserClient) close() error {
 	return nil
 }
 func (user *UserClient) send(msg Message) error {
-	var mesTest = make(map[string]interface{}, 0)
-	mesTest["content"] = msg.Content
-	mesTest["send_time"] = msg.SendTime.Format("2006-01-02 15:04:05")
-	mesText, _ := jsoniter.Marshal(mesTest)
+	var msgMap = make(map[string]interface{}, 0)
+	msgMap["content"] = msg.Content
+	msgMap["send_time"] = msg.SendTime.Format("2006-01-02 15:04:05")
+	mesText, _ := jsoniter.Marshal(msgMap)
 	err := user.conn.WriteMessage(websocket.TextMessage, mesText)
 	if err != nil {
 		return SendMsgErr

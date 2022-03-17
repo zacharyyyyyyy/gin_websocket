@@ -18,6 +18,7 @@ type baseConf struct {
 
 	wsConf    WebsocketConf
 	redisConf RedisConf
+	dbConf    DbConf
 }
 
 var BaseConf = &baseConf{}
@@ -37,12 +38,12 @@ func (ConfHandle *baseConf) Load() {
 	var (
 		wsConf = &WebsocketConf{}
 		rdConf = &RedisConf{}
+		dbConf = &DbConf{}
 	)
 	if cfg, err := match(wsConf); err == nil {
 		err := cfg.MapTo(wsConf)
 		if err != nil {
-			errString := fmt.Sprintf("%s:%s", IniSectionNotFoundErr, wsConf.getSectionName())
-			logger.Service.Error(errString)
+			recordError(IniSectionNotFoundErr, wsConf)
 		} else {
 			BaseConf.wsConf = *wsConf
 		}
@@ -50,24 +51,19 @@ func (ConfHandle *baseConf) Load() {
 	if cfg, err := match(rdConf); err == nil {
 		err := cfg.MapTo(rdConf)
 		if err != nil {
-			errString := fmt.Sprintf("%s:%s", IniSectionNotFoundErr, wsConf.getSectionName())
-			logger.Service.Error(errString)
+			recordError(IniSectionNotFoundErr, rdConf)
 		} else {
 			BaseConf.redisConf = *rdConf
 		}
 	}
-}
-
-func match(confMap ConfMap) (*ini.Section, error) {
-	iniPath := confMap.getPath()
-	iniSection := confMap.getSectionName()
-	cfg, err := ini.Load(iniPath)
-	if err != nil {
-		errString := fmt.Sprintf("%s:%s", err, confMap.getSectionName())
-		logger.Service.Error(errString)
-		return nil, IniFileNotFoundErr
+	if cfg, err := match(dbConf); err == nil {
+		err := cfg.MapTo(dbConf)
+		if err != nil {
+			recordError(IniSectionNotFoundErr, dbConf)
+		} else {
+			BaseConf.dbConf = *dbConf
+		}
 	}
-	return cfg.Section(iniSection), nil
 }
 
 func (ConfHandle *baseConf) GetWsConf() WebsocketConf {
@@ -79,4 +75,26 @@ func (ConfHandle *baseConf) GetRedisConf() RedisConf {
 	ConfHandle.lock.RLock()
 	defer ConfHandle.lock.RUnlock()
 	return ConfHandle.redisConf
+}
+
+func (ConfHandle *baseConf) GetDbConf() DbConf {
+	ConfHandle.lock.RLock()
+	defer ConfHandle.lock.RUnlock()
+	return ConfHandle.dbConf
+}
+
+func match(confMap ConfMap) (*ini.Section, error) {
+	iniPath := confMap.getPath()
+	iniSection := confMap.getSectionName()
+	cfg, err := ini.Load(iniPath)
+	if err != nil {
+		recordError(IniFileNotFoundErr, confMap)
+		return nil, IniFileNotFoundErr
+	}
+	return cfg.Section(iniSection), nil
+}
+
+func recordError(error error, confMap ConfMap) {
+	errString := fmt.Sprintf("%s:%s", error, confMap.getSectionName())
+	logger.Service.Error(errString)
 }

@@ -22,6 +22,7 @@ var (
 	Api     = Get("api")
 	Service = Get("service")
 	Runtime = Get("runtime")
+	Model   = Get("model")
 )
 
 func Get(filename string) *Logger {
@@ -79,4 +80,10 @@ func (l *Logger) Warn(msg string) {
 }
 func (l *Logger) Error(msg string) {
 	l.Logger.Error(msg)
+}
+
+//for io.writer
+func (l *Logger) Write(msg []byte) (int, error) {
+	l.Logger.Error(string(msg))
+	return len(msg), nil
 }
