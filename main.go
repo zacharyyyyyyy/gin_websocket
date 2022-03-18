@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "gin_websocket/lib/config"
 	"gin_websocket/router"
 )
 

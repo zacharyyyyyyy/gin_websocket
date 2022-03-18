@@ -93,6 +93,10 @@ func (Cont *WsContainer) Receive(message []byte) error {
 	//TODO
 }
 
+func (Cont *WsContainer) GetMsg() []Message {
+
+}
+
 //定时释放webcoket
 func (Cont *WsContainer) CleanClient(ctx context.Context, timeDuration time.Duration) {
 	timer := time.NewTimer(timeDuration)

@@ -2,11 +2,15 @@ package websocket
 
 import (
 	"context"
+	"gin_websocket/lib/logger"
+	"strconv"
+	"sync"
+	"time"
+
+	"gin_websocket/lib/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	jsoniter "github.com/json-iterator/go"
-	"sync"
-	"time"
 )
 
 type UserClientMethod interface {
@@ -71,9 +75,17 @@ func (user *UserClient) send(msg Message) error {
 	}
 	return nil
 }
-func (user *UserClient) receive() {
+func (user *UserClient) receive(msg Message) {
 	user.ChatLastTime = time.Now()
-	//Todo
+	err := redis.RedisDb.HSet("websocket_"+string(user.Id), strconv.FormatInt(msg.SendTime.Unix(), 10), msg.Content)
+	if err != nil {
+		logger.Service.Error(err.Error())
+	}
+}
+
+func (user *UserClient) getCacheMsg() []Message {
+	//var msg = make([]Message,5)
+	//redis.RedisDb.
 }
 
 func (user *UserClient) ping() {
