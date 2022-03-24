@@ -63,7 +63,7 @@ func (client *redisClient) HDelete(key string, field string) error {
 func (client *redisClient) HExists(key string, field string) (bool, error) {
 	return client.client.HExists(key, field).Result()
 }
-func (client *redisClient) SAdd(key string, value ...interface{}) error {
+func (client *redisClient) SAdd(key string, value interface{}) error {
 	return client.client.SAdd(key, value).Err()
 }
 

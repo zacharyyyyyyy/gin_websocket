@@ -2,11 +2,11 @@ package admin
 
 import (
 	"fmt"
+	"gin_websocket/controller/base"
 	"gin_websocket/lib/logger"
 	"gin_websocket/lib/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	jsoniter "github.com/json-iterator/go"
 	"net/http"
 )
 
@@ -48,16 +48,16 @@ func Link(c *gin.Context) {
 }
 
 func Ping(c *gin.Context) {
-	var str map[string]string
-	str, err := redis.RedisDb.HGetAll("test")
-	var msg string
+	var code int
+	var str []string
+	str, err := redis.RedisDb.SMembers("test")
 	if err != nil {
-		msg = "fail"
 		logger.Api.Error(err.Error())
+		code = http.StatusInternalServerError
 	} else {
-		msg = "success"
+		code = http.StatusOK
 	}
-	json := jsoniter.ConfigCompatibleWithStandardLibrary
-	jsonStr, _ := json.Marshal(str)
-	c.JSON(http.StatusOK, gin.H{"message": msg, "data": string(jsonStr)})
+	baseController := base.ResponseStruct{Data: str, Code: code}
+	baseController.JsonResponse(c)
+
 }
