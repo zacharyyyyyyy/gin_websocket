@@ -1,8 +1,9 @@
 package config
 
 type WebsocketConf struct {
-	PingLastTimeSec int
-	ChatLastTimeSec int
+	PingLastTimeSec   int
+	ChatLastTimeSec   int
+	CleanLimitTimeSec int
 }
 
 func (WsConf WebsocketConf) getPath() string {

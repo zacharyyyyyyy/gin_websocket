@@ -2,11 +2,10 @@ package websocket
 
 import (
 	"context"
-	"gin_websocket/lib/logger"
-	"strconv"
 	"sync"
 	"time"
 
+	"gin_websocket/lib/logger"
 	"gin_websocket/lib/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -18,15 +17,16 @@ type UserClientMethod interface {
 	SendMsg(msg Message) error
 	Ping()
 }
-type WsKey string
+
 type UserClient struct {
-	Id           WsKey
-	conn         *websocket.Conn
-	LastTime     time.Time
-	ChatLastTime time.Time
-	Ip           string
-	ctx          context.Context
-	lock         *sync.Mutex
+	Id                  WsKey
+	conn                *websocket.Conn
+	LastTime            time.Time
+	ChatLastTime        time.Time
+	Ip                  string
+	ctx                 context.Context
+	lock                *sync.Mutex
+	bindCustomerService *CustomerServiceClient
 }
 
 func newUser(ctx context.Context, c *gin.Context) (*UserClient, error) {
@@ -38,21 +38,34 @@ func newUser(ctx context.Context, c *gin.Context) (*UserClient, error) {
 		return nil, ClientBuildFailErr
 	}
 	return &UserClient{
-		Id:       WsKey(c.Request.Header.Get("Sec-Websocket-Key")),
-		conn:     ws,
-		LastTime: time.Now(),
-		Ip:       c.ClientIP(),
-		ctx:      ctx,
-		lock:     &sync.Mutex{},
+		Id:                  WsKey(c.Request.Header.Get("Sec-Websocket-Key")),
+		conn:                ws,
+		LastTime:            time.Now(),
+		Ip:                  c.ClientIP(),
+		ctx:                 ctx,
+		lock:                &sync.Mutex{},
+		bindCustomerService: nil,
 	}, nil
+}
+
+func (user *UserClient) bind(customerService *CustomerServiceClient) error {
+	user.lock.Lock()
+	defer user.lock.Unlock()
+	if user.bindCustomerService != nil {
+		return ClientAlreadyBoundErr
+	}
+	user.bindCustomerService = customerService
+	return nil
 }
 
 func (user *UserClient) close() error {
 	closeMsg := Message{
-		Id:           nil,
-		Content:      "当前聊天结束",
-		SendTime:     time.Now(),
-		WebsocketKey: user.Id,
+		Id:             nil,
+		Content:        "当前聊天结束",
+		SendTime:       time.Now(),
+		WebsocketKey:   nil,
+		ToWebsocketKey: user.Id,
+		Type:           CloseType,
 	}
 	err := user.send(closeMsg)
 	if err != nil {
@@ -75,17 +88,17 @@ func (user *UserClient) send(msg Message) error {
 	}
 	return nil
 }
-func (user *UserClient) receive(msg Message) {
+func (user *UserClient) receive(msg Message, customerService CustomerServiceClient) {
 	user.ChatLastTime = time.Now()
-	err := redis.RedisDb.HSet("websocket_"+string(user.Id), strconv.FormatInt(msg.SendTime.Unix(), 10), msg.Content)
+	jsonMsg, _ := jsoniter.Marshal(msg)
+	err := redis.RedisDb.SAdd("websocket_user_"+string(user.Id), jsonMsg)
 	if err != nil {
 		logger.Service.Error(err.Error())
 	}
-}
-
-func (user *UserClient) getCacheMsg() []Message {
-	//var msg = make([]Message,5)
-	//redis.RedisDb.
+	err = customerService.send(msg, *user)
+	if err != nil {
+		logger.Service.Error(ClientNotFoundErr.Error())
+	}
 }
 
 func (user *UserClient) ping() {
@@ -94,7 +107,7 @@ func (user *UserClient) ping() {
 
 //超时关闭
 func (user *UserClient) timeout() error {
-	if user.LastTime.Unix() < (time.Now().Unix()-int64(pingLastTimeSec)) || user.ChatLastTime.Unix() < (time.Now().Unix()-int64(chatLastTimeSec)) {
+	if user.LastTime.Unix() < (time.Now().Unix()-int64(WsConf.PingLastTimeSec)) || user.ChatLastTime.Unix() < (time.Now().Unix()-int64(WsConf.ChatLastTimeSec)) {
 		err := user.close()
 		if err != nil {
 			return ClientNotFoundErr

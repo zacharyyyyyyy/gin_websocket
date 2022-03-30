@@ -2,7 +2,7 @@ package admin
 
 import (
 	"fmt"
-	"gin_websocket/controller/base"
+	"gin_websocket/controller"
 	"gin_websocket/lib/logger"
 	"gin_websocket/lib/redis"
 	"github.com/gin-gonic/gin"
@@ -57,7 +57,7 @@ func Ping(c *gin.Context) {
 	} else {
 		code = http.StatusOK
 	}
-	baseController := base.ResponseStruct{Data: str, Code: code}
-	baseController.JsonResponse(c)
+	baseController := controller.ResponseStruct{Data: str, Code: code, C: c}
+	baseController.JsonResponse()
 
 }

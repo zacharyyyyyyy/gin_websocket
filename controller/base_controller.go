@@ -1,4 +1,4 @@
-package base
+package controller
 
 import (
 	"github.com/gin-gonic/gin"
@@ -18,6 +18,7 @@ var DefaultErrorMsgMap = map[int]string{
 }
 
 type ResponseStruct struct {
+	C       *gin.Context
 	Data    interface{}
 	message string
 	Code    int
@@ -29,8 +30,8 @@ type jsonResponseStruct struct {
 	JsonCode    int         `json:"code"`
 }
 
-func (resp *ResponseStruct) JsonResponse(c *gin.Context) {
-	c.Writer.Header().Set("Content-Type", "application/json")
+func (resp *ResponseStruct) JsonResponse() {
+	resp.C.Writer.Header().Set("Content-Type", "application/json")
 	if resp.Code == 0 {
 		resp.Code = http.StatusOK
 	}
@@ -45,11 +46,17 @@ func (resp *ResponseStruct) JsonResponse(c *gin.Context) {
 		JsonCode:    resp.Code,
 	}
 	jsonStr, _ := jsoniter.Marshal(jsonResp)
-	c.String(resp.Code, string(jsonStr))
+	resp.C.String(resp.Code, string(jsonStr))
 }
 
 func (resp *ResponseStruct) SetMessage(msg string) {
 	resp.message = msg
+}
+
+func (resp *ResponseStruct) SetHeaders(headers map[string]string) {
+	for key, value := range headers {
+		resp.C.Writer.Header().Set(key, value)
+	}
 }
 
 func (resp *ResponseStruct) setMessageByCode() {

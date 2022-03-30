@@ -4,24 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"gin_websocket/lib/config"
 	"gin_websocket/lib/logger"
-	"github.com/gin-gonic/gin"
-	"net/http"
-	"sync"
-	"time"
-
 	"github.com/gorilla/websocket"
+	"net/http"
+	"time"
 )
 
-type WsContainer struct {
-	WebSocketClientMap map[WsKey]UserClient
-	lock               *sync.RWMutex
-	webSocketCont      int
-}
+type WsKey string
 
 var (
-	WsContainerHandle *WsContainer
-	upGrader          = websocket.Upgrader{
+	WsContainerHandle              = UserStart()
+	CustomerServiceContainerHandle = ServiceStart()
+	upGrader                       = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
@@ -29,76 +24,23 @@ var (
 )
 
 var (
-	ClientBuildFailErr = errors.New("websocket创建失败")
-	ClientNotFoundErr  = errors.New("客户端链接不存在,或已关闭")
-	WrongConnErr       = errors.New("该请求非websocket")
-	SendMsgErr         = errors.New("发送消息失败")
+	ClientBuildFailErr    = errors.New("websocket创建失败")
+	ClientNotFoundErr     = errors.New("客户端链接不存在,或已关闭")
+	WrongConnErr          = errors.New("该请求非websocket")
+	SendMsgErr            = errors.New("发送消息失败")
+	ClientAlreadyBoundErr = errors.New("客户端已被绑定")
 )
 
-var (
-	pingLastTimeSec = 60
-	chatLastTimeSec = 180
-)
+var WsConf config.WebsocketConf = config.BaseConf.GetWsConf()
 
-func Start(ctx context.Context) *WsContainer {
-	client := make(map[WsKey]UserClient, 0)
-	WsContainerHandle = &WsContainer{
-		WebSocketClientMap: client,
-		lock:               &sync.RWMutex{},
-		webSocketCont:      0,
-	}
-	return WsContainerHandle
-}
-
-func (Cont *WsContainer) NewClient(ctx context.Context, c *gin.Context) error {
-	var userClient *UserClient
-	userClient, err := newUser(ctx, c)
-	if err != nil {
-		logger.Service.Error(err.Error())
-		return err
-	}
-	Cont.append(userClient)
-	return nil
-}
-
-func (Cont WsContainer) GetConnCount() int {
-	return Cont.webSocketCont
-}
-
-func (Cont *WsContainer) Remove(userClient UserClient) error {
-	Cont.lock.Lock()
-	defer Cont.lock.Unlock()
-	if _, ok := Cont.WebSocketClientMap[userClient.Id]; !ok {
-		return ClientNotFoundErr
-	}
-	//先释放链接
-	err := Cont.WebSocketClientMap[userClient.Id].close()
-	if err != nil {
-		return err
-	}
-	delete(Cont.WebSocketClientMap, userClient.Id)
-	Cont.webSocketCont--
-	return nil
-}
-
-func (Cont *WsContainer) Send(message Message) error {
-	err := Cont.WebSocketClientMap[message.WebsocketKey].send(message)
-	if err != nil {
-		logger.Service.Error(err.Error())
-		return err
-	}
-	return nil
-}
-func (Cont *WsContainer) Receive(message []byte) error {
-	//TODO
-}
-
-func (Cont *WsContainer) GetMsg() []Message {
-
+func Start() {
+	ctx, _ := context.WithCancel(context.Background())
+	limitTime := time.Duration(WsConf.CleanLimitTimeSec) * time.Second
+	go cleanClient(ctx, WsContainerHandle, limitTime)
 }
 
 //定时释放webcoket
-func (Cont *WsContainer) CleanClient(ctx context.Context, timeDuration time.Duration) {
+func cleanClient(ctx context.Context, Cont *WsContainer, timeDuration time.Duration) {
 	timer := time.NewTimer(timeDuration)
 	defer timer.Stop()
 	for {
@@ -118,10 +60,4 @@ func (Cont *WsContainer) CleanClient(ctx context.Context, timeDuration time.Dura
 			return
 		}
 	}
-}
-func (Cont *WsContainer) append(userClient *UserClient) {
-	Cont.lock.Lock()
-	defer Cont.lock.Unlock()
-	Cont.WebSocketClientMap[userClient.Id] = *userClient
-	Cont.webSocketCont++
 }
