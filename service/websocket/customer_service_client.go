@@ -12,7 +12,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-type CustomerServiceMethod interface {
+type customerServiceMethod interface {
 	Close() error
 	SendMsg(msg Message) error
 }
@@ -57,7 +57,7 @@ func (cusServ *CustomerServiceClient) bindUser(user *UserClient) error {
 }
 
 func (cusServ *CustomerServiceClient) close() error {
-	err := cusServ.bindUserClient.close()
+	err := cusServ.bindUserClient.Close()
 	if err != nil {
 		return ClientNotFoundErr
 	}
@@ -94,7 +94,7 @@ func (cusServ *CustomerServiceClient) receive(msg Message, client UserClient) er
 
 //超时关闭
 func (cusServ *CustomerServiceClient) timeout() error {
-	if cusServ.LastTime.Unix() < (time.Now().Unix()-int64(WsConf.PingLastTimeSec)) || cusServ.ChatLastTime.Unix() < (time.Now().Unix()-int64(WsConf.ChatLastTimeSec)) {
+	if cusServ.LastTime.Unix() < (time.Now().Unix()-int64(wsConf.PingLastTimeSec)) || cusServ.ChatLastTime.Unix() < (time.Now().Unix()-int64(wsConf.ChatLastTimeSec)) {
 		err := cusServ.close()
 		if err != nil {
 			return ClientNotFoundErr

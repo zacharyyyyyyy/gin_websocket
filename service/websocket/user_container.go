@@ -1,9 +1,6 @@
 package websocket
 
 import (
-	"context"
-	"gin_websocket/lib/logger"
-	"github.com/gin-gonic/gin"
 	"sync"
 )
 
@@ -15,7 +12,7 @@ type WsContainer struct {
 }
 
 //容器加载
-func UserStart() *WsContainer {
+func userStart() *WsContainer {
 	client := make(map[WsKey]*UserClient, 1)
 	WsContainerHandle := &WsContainer{
 		WebSocketClientMap:   client,
@@ -26,15 +23,8 @@ func UserStart() *WsContainer {
 }
 
 //用户连入初始化
-func (Cont *WsContainer) NewClient(ctx context.Context, c *gin.Context) error {
-	var userClient *UserClient
-	userClient, err := newUser(ctx, c)
-	if err != nil {
-		logger.Service.Error(err.Error())
-		return err
-	}
-	Cont.append(userClient)
-	return nil
+func (Cont *WsContainer) NewClient(userClient *UserClient) error {
+	return Cont.append(userClient)
 }
 
 func (Cont WsContainer) GetConnCount() int {
@@ -48,7 +38,7 @@ func (Cont *WsContainer) Remove(userClient *UserClient) error {
 		return ClientNotFoundErr
 	}
 	//先释放链接
-	err := Cont.WebSocketClientMap[userClient.Id].close()
+	err := Cont.WebSocketClientMap[userClient.Id].Close()
 	if err != nil {
 		return err
 	}
@@ -57,9 +47,13 @@ func (Cont *WsContainer) Remove(userClient *UserClient) error {
 	return nil
 }
 
-func (Cont *WsContainer) append(userClient *UserClient) {
+func (Cont *WsContainer) append(userClient *UserClient) error {
 	Cont.lock.Lock()
 	defer Cont.lock.Unlock()
+	if Cont.ClientWebSocketCount > wsConf.MaxConnection {
+		return TooManyConnectionErr
+	}
 	Cont.WebSocketClientMap[userClient.Id] = userClient
 	Cont.ClientWebSocketCount++
+	return nil
 }

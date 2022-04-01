@@ -12,7 +12,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-type UserClientMethod interface {
+type userClientMethod interface {
 	Close() error
 	SendMsg(msg Message) error
 	Ping()
@@ -29,8 +29,8 @@ type UserClient struct {
 	bindCustomerService *CustomerServiceClient
 }
 
-func newUser(ctx context.Context, c *gin.Context) (*UserClient, error) {
-	if websocket.IsWebSocketUpgrade(c.Request) {
+func NewUserClient(ctx context.Context, c *gin.Context) (*UserClient, error) {
+	if !websocket.IsWebSocketUpgrade(c.Request) {
 		return nil, WrongConnErr
 	}
 	ws, err := upGrader.Upgrade(c.Writer, c.Request, nil)
@@ -58,14 +58,14 @@ func (user *UserClient) bind(customerService *CustomerServiceClient) error {
 	return nil
 }
 
-func (user *UserClient) close() error {
+func (user *UserClient) Close() error {
 	closeMsg := Message{
-		Id:             nil,
+		Id:             "",
 		Content:        "当前聊天结束",
 		SendTime:       time.Now(),
-		WebsocketKey:   nil,
+		WebsocketKey:   "",
 		ToWebsocketKey: user.Id,
-		Type:           CloseType,
+		Type:           closeType,
 	}
 	err := user.send(closeMsg)
 	if err != nil {
@@ -88,17 +88,54 @@ func (user *UserClient) send(msg Message) error {
 	}
 	return nil
 }
-func (user *UserClient) receive(msg Message, customerService CustomerServiceClient) {
+
+func (user *UserClient) Receive() error {
+	var customerService *CustomerServiceClient
+	var content map[string]interface{}
+	var msgType int
+
+	msgType, byteMsg, err := user.conn.ReadMessage()
 	user.ChatLastTime = time.Now()
-	jsonMsg, _ := jsoniter.Marshal(msg)
-	err := redis.RedisDb.SAdd("websocket_user_"+string(user.Id), jsonMsg)
+	err = redis.RedisDb.SAdd("websocket_user_"+string(user.Id), string(byteMsg))
 	if err != nil {
 		logger.Service.Error(err.Error())
+		if msgType == closeType {
+			return CloseErr
+		}
+	}
+	if user.bindCustomerService != nil {
+		customerService = user.bindCustomerService
+	} else {
+		customerService, err = getCustomerService()
+		if err != nil {
+			msg := Message{
+				Id:             "",
+				Content:        err.Error(),
+				SendTime:       time.Time{},
+				WebsocketKey:   "",
+				ToWebsocketKey: user.Id,
+				Type:           chatType,
+			}
+			_ = user.send(msg)
+			return err
+		}
+		_ = user.bind(customerService)
+	}
+
+	_ = jsoniter.Unmarshal(byteMsg, &content)
+	msg := Message{
+		Id:             "",
+		Content:        content["content"].(string),
+		SendTime:       time.Time{},
+		WebsocketKey:   user.Id,
+		ToWebsocketKey: customerService.Id,
+		Type:           chatType,
 	}
 	err = customerService.send(msg, *user)
 	if err != nil {
 		logger.Service.Error(ClientNotFoundErr.Error())
 	}
+	return err
 }
 
 func (user *UserClient) ping() {
@@ -107,8 +144,8 @@ func (user *UserClient) ping() {
 
 //超时关闭
 func (user *UserClient) timeout() error {
-	if user.LastTime.Unix() < (time.Now().Unix()-int64(WsConf.PingLastTimeSec)) || user.ChatLastTime.Unix() < (time.Now().Unix()-int64(WsConf.ChatLastTimeSec)) {
-		err := user.close()
+	if user.LastTime.Unix() < (time.Now().Unix()-int64(wsConf.PingLastTimeSec)) || user.ChatLastTime.Unix() < (time.Now().Unix()-int64(wsConf.ChatLastTimeSec)) {
+		err := user.Close()
 		if err != nil {
 			return ClientNotFoundErr
 		}

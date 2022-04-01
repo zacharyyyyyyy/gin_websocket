@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"gin_websocket/lib/logger"
 	"github.com/gin-gonic/gin"
 	jsoniter "github.com/json-iterator/go"
 	"net/http"
@@ -28,6 +29,14 @@ type jsonResponseStruct struct {
 	JsonData    interface{} `json:"data"`
 	JsonMessage string      `json:"message"`
 	JsonCode    int         `json:"code"`
+}
+
+func PanicResponse(c *gin.Context, err error) {
+	code := http.StatusInternalServerError
+	logger.Api.Error(err.Error())
+	//TODO
+	baseController := ResponseStruct{Code: code, C: c}
+	baseController.JsonResponse()
 }
 
 func (resp *ResponseStruct) JsonResponse() {

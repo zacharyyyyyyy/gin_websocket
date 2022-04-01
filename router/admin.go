@@ -10,5 +10,6 @@ func initAdminRoute(r *gin.Engine) {
 	{
 		adminRoute.GET("/link", admin.Link)
 		adminRoute.GET("/ping", admin.Ping)
+		adminRoute.GET("/service_link", admin.ServiceLink)
 	}
 }

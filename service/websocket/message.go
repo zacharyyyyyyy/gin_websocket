@@ -12,8 +12,8 @@ type Message struct {
 }
 
 const (
-	ChatType = iota
-	ConnectType
-	CloseType
-	SystemType
+	chatType = iota
+	connectType
+	closeType
+	systemType
 )

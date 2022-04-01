@@ -4,6 +4,7 @@ type WebsocketConf struct {
 	PingLastTimeSec   int
 	ChatLastTimeSec   int
 	CleanLimitTimeSec int
+	MaxConnection     int
 }
 
 func (WsConf WebsocketConf) getPath() string {

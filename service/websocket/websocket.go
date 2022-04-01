@@ -14,8 +14,8 @@ import (
 type WsKey string
 
 var (
-	WsContainerHandle              = UserStart()
-	CustomerServiceContainerHandle = ServiceStart()
+	WsContainerHandle              = userStart()
+	CustomerServiceContainerHandle = serviceStart()
 	upGrader                       = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -24,18 +24,21 @@ var (
 )
 
 var (
-	ClientBuildFailErr    = errors.New("websocket创建失败")
-	ClientNotFoundErr     = errors.New("客户端链接不存在,或已关闭")
-	WrongConnErr          = errors.New("该请求非websocket")
-	SendMsgErr            = errors.New("发送消息失败")
-	ClientAlreadyBoundErr = errors.New("客户端已被绑定")
+	ClientBuildFailErr         = errors.New("websocket创建失败")
+	ClientNotFoundErr          = errors.New("客户端链接不存在,或已关闭")
+	WrongConnErr               = errors.New("该请求非websocket")
+	SendMsgErr                 = errors.New("发送消息失败")
+	ClientAlreadyBoundErr      = errors.New("客户端已被绑定")
+	CustomerServiceNotFoundErr = errors.New("暂无客服！请耐心等候")
+	TooManyConnectionErr       = errors.New("服务忙碌中，请稍后重试")
+	CloseErr                   = errors.New("链接已关闭")
 )
 
-var WsConf config.WebsocketConf = config.BaseConf.GetWsConf()
+var wsConf config.WebsocketConf = config.BaseConf.GetWsConf()
 
 func Start() {
 	ctx, _ := context.WithCancel(context.Background())
-	limitTime := time.Duration(WsConf.CleanLimitTimeSec) * time.Second
+	limitTime := time.Duration(wsConf.CleanLimitTimeSec) * time.Second
 	go cleanClient(ctx, WsContainerHandle, limitTime)
 }
 
@@ -46,13 +49,22 @@ func cleanClient(ctx context.Context, Cont *WsContainer, timeDuration time.Durat
 	for {
 		select {
 		case <-timer.C:
-			for _, userClient := range WsContainerHandle.WebSocketClientMap {
+			for _, userClient := range Cont.WebSocketClientMap {
+				ip := userClient.Ip
 				err := userClient.timeout()
-				errString := fmt.Sprintf("websocket timeout func err:%s", err)
-				logger.Service.Error(errString)
-				err = WsContainerHandle.Remove(userClient)
-				errString = fmt.Sprintf("websocket remove func err:%s", err)
-				logger.Service.Error(errString)
+				if err != nil {
+					errString := fmt.Sprintf("websocket timeout func err:%s", err)
+					logger.Service.Error(errString)
+					continue
+				}
+				err = Cont.Remove(userClient)
+				if err != nil {
+					errString := fmt.Sprintf("websocket remove func err:%s", err)
+					logger.Service.Error(errString)
+					continue
+				}
+
+				logger.Service.Info(fmt.Sprintf("websocket clear, ip:%s", ip))
 			}
 			timer.Reset(timeDuration)
 		case <-ctx.Done():

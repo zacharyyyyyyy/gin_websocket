@@ -16,7 +16,7 @@ type CustomerServiceContainer struct {
 }
 
 //容器加载
-func ServiceStart() *CustomerServiceContainer {
+func serviceStart() *CustomerServiceContainer {
 	customerService := make(map[WsKey]*CustomerServiceClient, 1)
 	CustomerServiceContainerHandle := &CustomerServiceContainer{
 		WebsocketCustomerServiceMap: customerService,
@@ -24,6 +24,17 @@ func ServiceStart() *CustomerServiceContainer {
 		CustomerWebsocketCount:      0,
 	}
 	return CustomerServiceContainerHandle
+}
+
+func getCustomerService() (*CustomerServiceClient, error) {
+	CustomerServiceContainerHandle.lock.Lock()
+	defer CustomerServiceContainerHandle.lock.Unlock()
+	for _, serviceClient := range CustomerServiceContainerHandle.WebsocketCustomerServiceMap {
+		_ = CustomerServiceContainerHandle.Remove(serviceClient)
+		return serviceClient, nil
+		break
+	}
+	return nil, CustomerServiceNotFoundErr
 }
 
 //客服连入初始化
