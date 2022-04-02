@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"gin_websocket/lib/logger"
 	"gin_websocket/lib/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -84,11 +83,8 @@ func (cusServ *CustomerServiceClient) send(msg Message, user UserClient) error {
 func (cusServ *CustomerServiceClient) receive(msg Message, client UserClient) error {
 	cusServ.ChatLastTime = time.Now()
 	jsonMsg, _ := jsoniter.Marshal(msg)
-	err := redis.RedisDb.SAdd("websocket_service_"+string(cusServ.Id), jsonMsg)
-	if err != nil {
-		logger.Service.Error(err.Error())
-	}
-	err = client.send(msg)
+	_ = redis.RedisDb.RPush("websocket_service_"+string(cusServ.Id), jsonMsg)
+	err := client.send(msg)
 	return err
 }
 

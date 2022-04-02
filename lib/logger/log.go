@@ -5,6 +5,9 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
+	"os"
+	"runtime"
+	"strings"
 	"sync"
 	"time"
 )
@@ -69,17 +72,30 @@ func logTimeFormat(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 }
 
 func (l *Logger) Debug(msg string) {
-	l.Logger.Debug(msg)
+	l.Logger.Debug(msg, l.locateField())
 }
 
 func (l *Logger) Info(msg string) {
-	l.Logger.Info(msg)
+	l.Logger.Info(msg, l.locateField())
 }
 func (l *Logger) Warn(msg string) {
-	l.Logger.Warn(msg)
+	l.Logger.Warn(msg, l.locateField())
 }
 func (l *Logger) Error(msg string) {
-	l.Logger.Error(msg)
+	l.Logger.Error(msg, l.locateField())
+}
+
+func (l *Logger) locateField() zap.Field {
+	fileLine := ""
+	for i := 0; i < 10; i++ {
+		if _, file, line, ok := runtime.Caller(i); ok {
+			if binPath, err := os.Getwd(); err == nil {
+				file = strings.ReplaceAll(file, binPath, "")
+			}
+			fileLine += fmt.Sprintf("%s:%d  |  ", file, line)
+		}
+	}
+	return zap.String("_caller", fileLine)
 }
 
 //for io.writer

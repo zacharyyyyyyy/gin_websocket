@@ -36,6 +36,14 @@ func (client *redisClient) Delete(key string) error {
 	return client.client.Del(key).Err()
 }
 
+func (client *redisClient) RPush(key string, value interface{}) error {
+	return client.client.RPush(key, value).Err()
+}
+
+func (client *redisClient) LPop(key string) error {
+	return client.client.LPop(key).Err()
+}
+
 func (client *redisClient) HGet(key string, field string) (string, error) {
 	return client.client.HGet(key, field).Result()
 }

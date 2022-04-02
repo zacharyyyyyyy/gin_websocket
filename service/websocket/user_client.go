@@ -59,19 +59,21 @@ func (user *UserClient) bind(customerService *CustomerServiceClient) error {
 }
 
 func (user *UserClient) Close() error {
-	closeMsg := Message{
-		Id:             "",
-		Content:        "当前聊天结束",
-		SendTime:       time.Now(),
-		WebsocketKey:   "",
-		ToWebsocketKey: user.Id,
-		Type:           closeType,
+	if user.bindCustomerService != nil {
+		closeMsg := Message{
+			Id:             "",
+			Content:        "当前聊天结束",
+			SendTime:       time.Now(),
+			WebsocketKey:   user.Id,
+			ToWebsocketKey: user.bindCustomerService.Id,
+			Type:           closeType,
+		}
+		err := user.send(closeMsg)
+		if err != nil {
+			return err
+		}
 	}
-	err := user.send(closeMsg)
-	if err != nil {
-		return err
-	}
-	err = user.conn.Close()
+	err := user.conn.Close()
 	if err != nil {
 		return ClientNotFoundErr
 	}
@@ -93,16 +95,25 @@ func (user *UserClient) Receive() error {
 	var customerService *CustomerServiceClient
 	var content map[string]interface{}
 	var msgType int
+	var err error
 
 	msgType, byteMsg, err := user.conn.ReadMessage()
-	user.ChatLastTime = time.Now()
-	err = redis.RedisDb.SAdd("websocket_user_"+string(user.Id), string(byteMsg))
 	if err != nil {
-		logger.Service.Error(err.Error())
-		if msgType == closeType {
+		if msgType == -1 {
+			//关闭当前链接
+			_ = user.Close()
 			return CloseErr
+		} else {
+			logger.Service.Error(err.Error())
 		}
 	}
+	_ = jsoniter.Unmarshal(byteMsg, &content)
+	if content["type"] == "ping" {
+		user.ping()
+		return nil
+	}
+	user.ChatLastTime = time.Now()
+	_ = redis.RedisDb.RPush("websocket_user_"+string(user.Id), string(byteMsg))
 	if user.bindCustomerService != nil {
 		customerService = user.bindCustomerService
 	} else {
@@ -111,7 +122,7 @@ func (user *UserClient) Receive() error {
 			msg := Message{
 				Id:             "",
 				Content:        err.Error(),
-				SendTime:       time.Time{},
+				SendTime:       time.Now(),
 				WebsocketKey:   "",
 				ToWebsocketKey: user.Id,
 				Type:           chatType,
@@ -119,10 +130,10 @@ func (user *UserClient) Receive() error {
 			_ = user.send(msg)
 			return err
 		}
+		//双方绑定链接
 		_ = user.bind(customerService)
+		_ = customerService.bindUser(user)
 	}
-
-	_ = jsoniter.Unmarshal(byteMsg, &content)
 	msg := Message{
 		Id:             "",
 		Content:        content["content"].(string),
