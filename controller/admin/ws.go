@@ -22,7 +22,6 @@ func Link(c *gin.Context) {
 			fmt.Println(err.Error())
 			break
 		}
-
 		fmt.Println("loop")
 	}
 	fmt.Println("connect close")

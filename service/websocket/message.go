@@ -8,12 +8,12 @@ type Message struct {
 	SendTime       time.Time
 	WebsocketKey   WsKey
 	ToWebsocketKey WsKey
-	Type           int
+	Type           string
 }
 
 const (
-	chatType = iota
-	connectType
-	closeType
-	systemType
+	chatType    = "chat"
+	connectType = "connect"
+	closeType   = "close"
+	systemType  = "system"
 )

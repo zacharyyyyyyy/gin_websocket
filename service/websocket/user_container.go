@@ -31,20 +31,13 @@ func (Cont WsContainer) GetConnCount() int {
 	return Cont.ClientWebSocketCount
 }
 
+//主动删除
 func (Cont *WsContainer) Remove(userClient *UserClient) error {
-	Cont.lock.Lock()
-	defer Cont.lock.Unlock()
 	if _, ok := Cont.WebSocketClientMap[userClient.Id]; !ok {
 		return ClientNotFoundErr
 	}
-	//先释放链接
 	err := Cont.WebSocketClientMap[userClient.Id].Close()
-	if err != nil {
-		return err
-	}
-	delete(Cont.WebSocketClientMap, userClient.Id)
-	Cont.ClientWebSocketCount--
-	return nil
+	return err
 }
 
 func (Cont *WsContainer) append(userClient *UserClient) error {
@@ -55,5 +48,17 @@ func (Cont *WsContainer) append(userClient *UserClient) error {
 	}
 	Cont.WebSocketClientMap[userClient.Id] = userClient
 	Cont.ClientWebSocketCount++
+	return nil
+}
+
+//链接断时删除
+func (Cont *WsContainer) remove(userClient *UserClient) error {
+	Cont.lock.Lock()
+	defer Cont.lock.Unlock()
+	if _, ok := Cont.WebSocketClientMap[userClient.Id]; !ok {
+		return ClientNotFoundErr
+	}
+	delete(Cont.WebSocketClientMap, userClient.Id)
+	Cont.ClientWebSocketCount--
 	return nil
 }

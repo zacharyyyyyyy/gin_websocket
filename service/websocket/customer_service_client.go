@@ -2,10 +2,10 @@ package websocket
 
 import (
 	"context"
+	"gin_websocket/lib/logger"
 	"sync"
 	"time"
 
-	"gin_websocket/lib/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	jsoniter "github.com/json-iterator/go"
@@ -27,7 +27,7 @@ type CustomerServiceClient struct {
 	bindUserClient *UserClient
 }
 
-func newCustomerService(ctx context.Context, c *gin.Context) (*CustomerServiceClient, error) {
+func NewCustomerService(ctx context.Context, c *gin.Context) (*CustomerServiceClient, error) {
 	if websocket.IsWebSocketUpgrade(c.Request) {
 		return nil, WrongConnErr
 	}
@@ -35,7 +35,7 @@ func newCustomerService(ctx context.Context, c *gin.Context) (*CustomerServiceCl
 	if err != nil {
 		return nil, ClientBuildFailErr
 	}
-	return &CustomerServiceClient{
+	customerServiceClient := &CustomerServiceClient{
 		Id:             WsKey(c.Request.Header.Get("Sec-Websocket-Key")),
 		conn:           ws,
 		LastTime:       time.Now(),
@@ -43,56 +43,110 @@ func newCustomerService(ctx context.Context, c *gin.Context) (*CustomerServiceCl
 		ctx:            ctx,
 		lock:           &sync.Mutex{},
 		bindUserClient: nil,
-	}, nil
+	}
+
+	err = CustomerServiceContainerHandle.NewClient(customerServiceClient)
+	return customerServiceClient, err
+}
+
+func (cusServ *CustomerServiceClient) Close() error {
+	if cusServ.bindUserClient != nil {
+		closeMsg := Message{
+			Id:             "",
+			Content:        "当前聊天结束",
+			SendTime:       time.Now(),
+			WebsocketKey:   cusServ.Id,
+			ToWebsocketKey: cusServ.bindUserClient.Id,
+			Type:           closeType,
+		}
+		_ = cusServ.send(closeMsg)
+	}
+	_ = CustomerServiceContainerHandle.remove(cusServ)
+	if err := cusServ.conn.Close(); err != nil {
+		return ClientNotFoundErr
+	}
+	return nil
+}
+
+func (cusServ *CustomerServiceClient) Receive(msg Message, client UserClient) error {
+	var userClient *UserClient
+	var content map[string]interface{}
+	var msgType int
+	var err error
+
+	msgType, byteMsg, err := cusServ.conn.ReadMessage()
+	if err != nil {
+		if msgType == -1 {
+			//关闭当前链接
+			_ = cusServ.Close()
+			return CloseErr
+		} else {
+			logger.Service.Error(err.Error())
+		}
+	}
+	_ = jsoniter.Unmarshal(byteMsg, &content)
+	if content["type"] == "ping" {
+		cusServ.ping()
+		return nil
+	}
+	cusServ.ChatLastTime = time.Now()
+	if cusServ.bindUserClient == nil {
+		msg := Message{
+			Id:             "",
+			Content:        "暂无用户",
+			SendTime:       time.Now(),
+			WebsocketKey:   "",
+			ToWebsocketKey: cusServ.Id,
+			Type:           chatType,
+		}
+		_ = cusServ.send(msg)
+
+	}
+	userClient = cusServ.bindUserClient
+	msg = Message{
+		Id:             "",
+		Content:        content["content"].(string),
+		SendTime:       time.Time{},
+		WebsocketKey:   cusServ.Id,
+		ToWebsocketKey: userClient.Id,
+		Type:           chatType,
+	}
+	if err = userClient.send(msg); err != nil {
+		logger.Service.Error(ClientNotFoundErr.Error())
+	}
+	return err
 }
 
 func (cusServ *CustomerServiceClient) bindUser(user *UserClient) error {
-	err := user.bind(cusServ)
-	if err != nil {
+	cusServ.lock.Lock()
+	defer cusServ.lock.Unlock()
+	if cusServ.bindUserClient != nil {
 		return ClientAlreadyBoundErr
 	}
 	cusServ.bindUserClient = user
 	return nil
 }
 
-func (cusServ *CustomerServiceClient) close() error {
-	err := cusServ.bindUserClient.Close()
-	if err != nil {
-		return ClientNotFoundErr
-	}
-	err = cusServ.conn.Close()
-	if err != nil {
-		return ClientNotFoundErr
-	}
-	return nil
-}
-
-func (cusServ *CustomerServiceClient) send(msg Message, user UserClient) error {
+func (cusServ *CustomerServiceClient) send(msg Message) error {
 	var msgMap = make(map[string]interface{}, 0)
 	msgMap["content"] = msg.Content
 	msgMap["send_time"] = msg.SendTime.Format("2006-01-02 15:04:05")
-	msgMap["user_ip"] = user.Ip
-	msgMap["user_id"] = user.Id
+	msgMap["type"] = msg.Type
 	mesText, _ := jsoniter.Marshal(msgMap)
-	err := cusServ.conn.WriteMessage(websocket.TextMessage, mesText)
-	if err != nil {
+	if err := cusServ.conn.WriteMessage(websocket.TextMessage, mesText); err != nil {
 		return SendMsgErr
 	}
 	return nil
 }
-func (cusServ *CustomerServiceClient) receive(msg Message, client UserClient) error {
-	cusServ.ChatLastTime = time.Now()
-	jsonMsg, _ := jsoniter.Marshal(msg)
-	_ = redis.RedisDb.RPush("websocket_service_"+string(cusServ.Id), jsonMsg)
-	err := client.send(msg)
-	return err
+
+func (cusServ *CustomerServiceClient) ping() {
+	cusServ.LastTime = time.Now()
 }
 
 //超时关闭
 func (cusServ *CustomerServiceClient) timeout() error {
 	if cusServ.LastTime.Unix() < (time.Now().Unix()-int64(wsConf.PingLastTimeSec)) || cusServ.ChatLastTime.Unix() < (time.Now().Unix()-int64(wsConf.ChatLastTimeSec)) {
-		err := cusServ.close()
-		if err != nil {
+		if err := cusServ.Close(); err != nil {
 			return ClientNotFoundErr
 		}
 	}
