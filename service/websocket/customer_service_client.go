@@ -68,7 +68,7 @@ func (cusServ *CustomerServiceClient) Close() error {
 	return nil
 }
 
-func (cusServ *CustomerServiceClient) Receive(msg Message, client UserClient) error {
+func (cusServ *CustomerServiceClient) Receive() error {
 	var userClient *UserClient
 	var content map[string]interface{}
 	var msgType int
@@ -103,7 +103,7 @@ func (cusServ *CustomerServiceClient) Receive(msg Message, client UserClient) er
 
 	}
 	userClient = cusServ.bindUserClient
-	msg = Message{
+	msg := Message{
 		Id:             "",
 		Content:        content["content"].(string),
 		SendTime:       time.Time{},

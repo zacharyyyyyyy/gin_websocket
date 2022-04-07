@@ -36,7 +36,7 @@ func (Cont *CustomerServiceContainer) Remove(customerServiceClient *CustomerServ
 	if _, ok := Cont.WebsocketCustomerServiceMap[customerServiceClient.Id]; !ok {
 		return ClientNotFoundErr
 	}
-	err := Cont.WebsocketCustomerServiceMap[customerServiceClient.Id].close()
+	err := Cont.WebsocketCustomerServiceMap[customerServiceClient.Id].Close()
 	return err
 }
 
