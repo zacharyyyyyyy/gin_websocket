@@ -1,8 +1,8 @@
-package global
+package global_middleware
 
 import "github.com/gin-gonic/gin"
 
-func CORS(ctx *gin.Context) {
+func Cors(ctx *gin.Context) {
 	method := ctx.Request.Method
 	// set response header
 	ctx.Header("Access-Control-Allow-Origin", ctx.Request.Header.Get("Origin"))

@@ -46,9 +46,12 @@ func (Cont *WsContainer) append(userClient *UserClient) error {
 	if Cont.ClientWebSocketCount > wsConf.MaxConnection {
 		return TooManyConnectionErr
 	}
-	Cont.WebSocketClientMap[userClient.Id] = userClient
-	Cont.ClientWebSocketCount++
-	return nil
+	if _, ok := Cont.WebSocketClientMap[userClient.Id]; !ok {
+		Cont.WebSocketClientMap[userClient.Id] = userClient
+		Cont.ClientWebSocketCount++
+		return nil
+	}
+	return ClientAlreadyInContainer
 }
 
 //链接断时删除

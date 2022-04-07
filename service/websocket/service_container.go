@@ -43,9 +43,12 @@ func (Cont *CustomerServiceContainer) Remove(customerServiceClient *CustomerServ
 func (Cont *CustomerServiceContainer) append(customerServiceClient *CustomerServiceClient) error {
 	Cont.lock.Lock()
 	defer Cont.lock.Unlock()
-	Cont.WebsocketCustomerServiceMap[customerServiceClient.Id] = customerServiceClient
-	Cont.CustomerWebsocketCount++
-	return nil
+	if _, ok := Cont.WebsocketCustomerServiceMap[customerServiceClient.Id]; !ok {
+		Cont.WebsocketCustomerServiceMap[customerServiceClient.Id] = customerServiceClient
+		Cont.CustomerWebsocketCount++
+		return nil
+	}
+	return ClientAlreadyInContainer
 }
 
 func (Cont *CustomerServiceContainer) remove(customerServiceClient *CustomerServiceClient) error {
@@ -63,9 +66,9 @@ func getCustomerService() (*CustomerServiceClient, error) {
 	CustomerServiceContainerHandle.lock.Lock()
 	defer CustomerServiceContainerHandle.lock.Unlock()
 	for _, serviceClient := range CustomerServiceContainerHandle.WebsocketCustomerServiceMap {
-		_ = CustomerServiceContainerHandle.Remove(serviceClient)
+		delete(CustomerServiceContainerHandle.WebsocketCustomerServiceMap, serviceClient.Id)
+		CustomerServiceContainerHandle.CustomerWebsocketCount--
 		return serviceClient, nil
-		break
 	}
 	return nil, CustomerServiceNotFoundErr
 }

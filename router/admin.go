@@ -1,15 +1,14 @@
 package router
 
 import (
-	"gin_websocket/controller/admin"
+	"gin_websocket/controller/admin/ws"
 	"github.com/gin-gonic/gin"
 )
 
 func initAdminRoute(r *gin.Engine) {
 	adminRoute := r.Group("/admin")
 	{
-		adminRoute.GET("/link", admin.Link)
-		adminRoute.GET("/ping", admin.Ping)
-		adminRoute.GET("/service_link", admin.ServiceLink)
+		adminRoute.POST("/info", ws.Info)
+		adminRoute.GET("/service_link", ws.ServiceLink)
 	}
 }

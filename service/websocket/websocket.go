@@ -26,6 +26,7 @@ var (
 var (
 	ClientBuildFailErr         = errors.New("websocket创建失败")
 	ClientNotFoundErr          = errors.New("客户端链接不存在,或已关闭")
+	ClientAlreadyInContainer   = errors.New("客户端已在容器内")
 	WrongConnErr               = errors.New("该请求非websocket")
 	SendMsgErr                 = errors.New("发送消息失败")
 	ClientAlreadyBoundErr      = errors.New("客户端已被绑定")

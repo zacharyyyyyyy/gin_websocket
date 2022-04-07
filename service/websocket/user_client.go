@@ -62,9 +62,13 @@ func (user *UserClient) Close() error {
 			ToWebsocketKey: user.bindCustomerService.Id,
 			Type:           closeType,
 		}
-		_ = user.send(closeMsg)
+		_ = user.bindCustomerService.send(closeMsg)
 	}
 	_ = WsContainerHandle.remove(user)
+	if user.bindCustomerService != nil {
+		user.bindCustomerService.unbind(true)
+	}
+	user.unbind()
 	if err := user.conn.Close(); err != nil {
 		return ClientNotFoundErr
 	}
@@ -76,6 +80,7 @@ func (user *UserClient) Receive() error {
 	var content map[string]interface{}
 	var msgType int
 	var err error
+	var contentString string
 
 	msgType, byteMsg, err := user.conn.ReadMessage()
 	if err != nil {
@@ -97,7 +102,8 @@ func (user *UserClient) Receive() error {
 	if user.bindCustomerService != nil {
 		customerService = user.bindCustomerService
 	} else {
-		if customerService, err = getCustomerService(); err != nil {
+		customerService, err = getCustomerService()
+		if err != nil {
 			msg := Message{
 				Id:             "",
 				Content:        err.Error(),
@@ -113,10 +119,15 @@ func (user *UserClient) Receive() error {
 		_ = user.bind(customerService)
 		_ = customerService.bindUser(user)
 	}
+	if contentStr, ok := content["content"].(string); ok {
+		contentString = contentStr
+	} else {
+		contentString = ""
+	}
 	msg := Message{
 		Id:             "",
-		Content:        content["content"].(string),
-		SendTime:       time.Time{},
+		Content:        contentString,
+		SendTime:       time.Now(),
 		WebsocketKey:   user.Id,
 		ToWebsocketKey: customerService.Id,
 		Type:           chatType,
@@ -127,6 +138,10 @@ func (user *UserClient) Receive() error {
 	return err
 }
 
+func (user *UserClient) GetBindService() *CustomerServiceClient {
+	return user.bindCustomerService
+}
+
 func (user *UserClient) bind(customerService *CustomerServiceClient) error {
 	user.lock.Lock()
 	defer user.lock.Unlock()
@@ -135,6 +150,12 @@ func (user *UserClient) bind(customerService *CustomerServiceClient) error {
 	}
 	user.bindCustomerService = customerService
 	return nil
+}
+
+func (user *UserClient) unbind() {
+	user.lock.Lock()
+	defer user.lock.Unlock()
+	user.bindCustomerService = nil
 }
 
 func (user *UserClient) send(msg Message) error {
