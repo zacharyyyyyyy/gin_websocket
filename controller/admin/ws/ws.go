@@ -3,7 +3,6 @@ package ws
 import (
 	"context"
 	"errors"
-
 	"gin_websocket/controller"
 	ws "gin_websocket/service/websocket"
 	"github.com/gin-gonic/gin"
@@ -14,6 +13,7 @@ func ServiceLink(c *gin.Context) {
 	serviceClient, err := ws.NewCustomerService(ctx, c)
 	if err != nil {
 		controller.PanicResponse(c, err)
+		return
 	}
 	for {
 		err := serviceClient.Receive()
@@ -54,7 +54,6 @@ func Info(c *gin.Context) {
 	resp["service_count"] = serviceCount
 	resp["user_clients"] = userClientMapSlice
 	resp["service_clients"] = serviceClientMapSlice
-
 	respStruct := controller.ResponseStruct{
 		C:    c,
 		Data: resp,

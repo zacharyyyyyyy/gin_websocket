@@ -14,6 +14,7 @@ func Link(c *gin.Context) {
 	userClient, err := ws.NewUserClient(ctx, c)
 	if err != nil {
 		controller.PanicResponse(c, err)
+		return
 	}
 	for {
 		err := userClient.Receive()
