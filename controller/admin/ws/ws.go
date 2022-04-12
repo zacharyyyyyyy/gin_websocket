@@ -25,7 +25,7 @@ func ServiceLink(c *gin.Context) {
 }
 
 func Info(c *gin.Context) {
-	resp := make(map[string]interface{}, 2)
+	resp := make(map[string]interface{}, 0)
 	userClientMap, serviceClientMap := make(map[string]interface{}, 0), make(map[string]interface{}, 0)
 	userClientMapSlice, serviceClientMapSlice := make([]map[string]interface{}, 0), make([]map[string]interface{}, 0)
 	userCount := ws.WsContainerHandle.GetConnCount()

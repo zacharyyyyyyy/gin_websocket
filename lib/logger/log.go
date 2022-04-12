@@ -76,10 +76,10 @@ func (l *Logger) Debug(msg string) {
 }
 
 func (l *Logger) Info(msg string) {
-	l.Logger.Info(msg, l.locateField())
+	l.Logger.Info(msg)
 }
 func (l *Logger) Warn(msg string) {
-	l.Logger.Warn(msg, l.locateField())
+	l.Logger.Warn(msg)
 }
 func (l *Logger) Error(msg string) {
 	l.Logger.Error(msg, l.locateField())
@@ -87,13 +87,17 @@ func (l *Logger) Error(msg string) {
 
 func (l *Logger) locateField() zap.Field {
 	fileLine := ""
+	fileLineSlice := make([]string, 16)
 	for i := 0; i < 10; i++ {
 		if _, file, line, ok := runtime.Caller(i); ok {
 			if binPath, err := os.Getwd(); err == nil {
 				file = strings.ReplaceAll(file, binPath, "")
 			}
-			fileLine += fmt.Sprintf("%s:%d  |  ", file, line)
+			fileLineSlice = append(fileLineSlice, fmt.Sprintf("%s:%d", file, line))
 		}
+	}
+	if len(fileLineSlice) > 0 {
+		fileLine = strings.Join(fileLineSlice, "  |  ")
 	}
 	return zap.String("_caller", fileLine)
 }

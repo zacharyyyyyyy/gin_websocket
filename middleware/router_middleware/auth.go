@@ -1,4 +1,4 @@
-package global_middleware
+package router_middleware
 
 import (
 	"github.com/gin-gonic/gin"

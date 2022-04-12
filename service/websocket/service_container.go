@@ -13,7 +13,7 @@ type CustomerServiceContainer struct {
 
 //容器加载
 func serviceStart() *CustomerServiceContainer {
-	customerService := make(map[WsKey]*CustomerServiceClient, 1)
+	customerService := make(map[WsKey]*CustomerServiceClient, 0)
 	CustomerServiceContainerHandle := &CustomerServiceContainer{
 		WebsocketCustomerServiceMap: customerService,
 		lock:                        &sync.RWMutex{},

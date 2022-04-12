@@ -13,7 +13,7 @@ type WsContainer struct {
 
 //容器加载
 func userStart() *WsContainer {
-	client := make(map[WsKey]*UserClient, 1)
+	client := make(map[WsKey]*UserClient, 0)
 	WsContainerHandle := &WsContainer{
 		WebSocketClientMap:   client,
 		lock:                 &sync.RWMutex{},
