@@ -16,7 +16,7 @@ type session struct {
 }
 
 const SidLength = 32
-const sessionName = "sid"
+const sessionName = "gid"
 const LifeTime = 864000 * time.Second
 
 var sidReg = regexp.MustCompile(fmt.Sprintf("[a-z0-9]{%d}", SidLength))
@@ -40,7 +40,17 @@ func (session *session) GetString(key string) (string, error) {
 }
 
 func (session *session) Set(key string, value string) error {
-	return redis.RedisDb.HSet(session.sid, key, value)
+	err := redis.RedisDb.HSet(session.sid, key, value)
+	err = redis.RedisDb.Expire(session.sid, LifeTime)
+	return err
+}
+
+func (session *session) SingleDel(key string) error {
+	return redis.RedisDb.HDelete(session.sid, key)
+}
+
+func (session *session) Del() error {
+	return redis.RedisDb.Delete(session.sid)
 }
 
 func genSid() string {

@@ -32,6 +32,10 @@ func (client *redisClient) Set(key string, value string, time time.Duration) err
 	return client.client.Set(key, value, time).Err()
 }
 
+func (client *redisClient) Expire(key string, time time.Duration) error {
+	return client.client.Expire(key, time).Err()
+}
+
 func (client *redisClient) Delete(key string) error {
 	return client.client.Del(key).Err()
 }

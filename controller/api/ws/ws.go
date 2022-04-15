@@ -3,6 +3,7 @@ package ws
 import (
 	"context"
 	"errors"
+	"net/http"
 
 	"gin_websocket/controller"
 	ws "gin_websocket/service/websocket"
@@ -13,7 +14,7 @@ func Link(c *gin.Context) {
 	ctx, _ := context.WithCancel(context.Background())
 	userClient, err := ws.NewUserClient(ctx, c)
 	if err != nil {
-		controller.PanicResponse(c, err)
+		controller.PanicResponse(c, err, http.StatusInternalServerError)
 		return
 	}
 	for {

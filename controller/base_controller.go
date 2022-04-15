@@ -31,11 +31,19 @@ type jsonResponseStruct struct {
 	JsonCode    int         `json:"code"`
 }
 
-func PanicResponse(c *gin.Context, err error) {
-	code := http.StatusInternalServerError
+func PanicResponse(c *gin.Context, err error, code int) {
+	if code == 0 {
+		code = http.StatusInternalServerError
+	}
 	logger.Api.Error(err.Error())
 	//TODO
 	baseController := ResponseStruct{Code: code, C: c}
+	baseController.JsonResponse()
+}
+
+//成功且无需返回任何信息时使用
+func QuickSuccessResponse(c *gin.Context) {
+	baseController := ResponseStruct{Code: http.StatusOK, C: c}
 	baseController.JsonResponse()
 }
 

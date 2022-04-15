@@ -3,8 +3,11 @@ package ws
 import (
 	"context"
 	"errors"
+	"net/http"
+
 	"gin_websocket/controller"
 	ws "gin_websocket/service/websocket"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,7 +15,7 @@ func ServiceLink(c *gin.Context) {
 	ctx, _ := context.WithCancel(context.Background())
 	serviceClient, err := ws.NewCustomerService(ctx, c)
 	if err != nil {
-		controller.PanicResponse(c, err)
+		controller.PanicResponse(c, err, http.StatusInternalServerError)
 		return
 	}
 	for {
