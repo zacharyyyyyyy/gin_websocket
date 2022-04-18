@@ -3,6 +3,7 @@ package websocket
 import (
 	"context"
 	"gin_websocket/lib/logger"
+	"net/http"
 	"sync"
 	"time"
 
@@ -27,19 +28,19 @@ type CustomerServiceClient struct {
 	bindUserClient *UserClient
 }
 
-func NewCustomerService(ctx context.Context, c *gin.Context) (*CustomerServiceClient, error) {
-	if !websocket.IsWebSocketUpgrade(c.Request) {
+func NewCustomerService(ctx context.Context, cRequest *http.Request, cResponse gin.ResponseWriter, ip string) (*CustomerServiceClient, error) {
+	if !websocket.IsWebSocketUpgrade(cRequest) {
 		return nil, WrongConnErr
 	}
-	ws, err := upGrader.Upgrade(c.Writer, c.Request, nil)
+	ws, err := upGrader.Upgrade(cResponse, cRequest, nil)
 	if err != nil {
 		return nil, ClientBuildFailErr
 	}
 	customerServiceClient := &CustomerServiceClient{
-		Id:             WsKey(c.Request.Header.Get("Sec-Websocket-Key")),
+		Id:             WsKey(cRequest.Header.Get("Sec-Websocket-Key")),
 		conn:           ws,
 		LastTime:       time.Now(),
-		Ip:             c.ClientIP(),
+		Ip:             ip,
 		ctx:            ctx,
 		lock:           &sync.Mutex{},
 		bindUserClient: nil,

@@ -2,11 +2,13 @@ package websocket
 
 import (
 	"context"
+	"net/http"
 	"sync"
 	"time"
 
 	"gin_websocket/lib/logger"
 	"gin_websocket/lib/redis"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	jsoniter "github.com/json-iterator/go"
@@ -29,19 +31,19 @@ type UserClient struct {
 	bindCustomerService *CustomerServiceClient
 }
 
-func NewUserClient(ctx context.Context, c *gin.Context) (*UserClient, error) {
-	if !websocket.IsWebSocketUpgrade(c.Request) {
+func NewUserClient(ctx context.Context, cRequest *http.Request, cResponse gin.ResponseWriter, ip string) (*UserClient, error) {
+	if !websocket.IsWebSocketUpgrade(cRequest) {
 		return nil, WrongConnErr
 	}
-	ws, err := upGrader.Upgrade(c.Writer, c.Request, nil)
+	ws, err := upGrader.Upgrade(cResponse, cRequest, nil)
 	if err != nil {
 		return nil, ClientBuildFailErr
 	}
 	userClient := &UserClient{
-		Id:                  WsKey(c.Request.Header.Get("Sec-Websocket-Key")),
+		Id:                  WsKey(cRequest.Header.Get("Sec-Websocket-Key")),
 		conn:                ws,
 		LastTime:            time.Now(),
-		Ip:                  c.ClientIP(),
+		Ip:                  ip,
 		ctx:                 ctx,
 		lock:                &sync.Mutex{},
 		bindCustomerService: nil,

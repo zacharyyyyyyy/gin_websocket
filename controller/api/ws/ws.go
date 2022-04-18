@@ -12,7 +12,7 @@ import (
 
 func Link(c *gin.Context) {
 	ctx, _ := context.WithCancel(context.Background())
-	userClient, err := ws.NewUserClient(ctx, c)
+	userClient, err := ws.NewUserClient(ctx, c.Request, c.Writer, c.ClientIP())
 	if err != nil {
 		controller.PanicResponse(c, err, http.StatusInternalServerError)
 		return

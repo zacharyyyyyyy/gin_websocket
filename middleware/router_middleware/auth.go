@@ -46,8 +46,8 @@ func loadAuthorizationRules() (rules grbac.Rules, err error) {
 	return
 }
 
-func QueryRoles(c *gin.Context) (roles []string, err error) {
-	userSession := session.NewSession(c)
+func QueryRoles(cRequest *http.Request, cResponse gin.ResponseWriter) (roles []string, err error) {
+	userSession := session.NewSession(cRequest, cResponse)
 	roleString, err := userSession.GetString("role")
 	if err != nil {
 		return nil, err
@@ -62,22 +62,22 @@ func AdminAuthentication() gin.HandlerFunc {
 		panic(err)
 	}
 	return func(c *gin.Context) {
-		roles, err := QueryRoles(c)
+		roles, err := QueryRoles(c.Request, c.Writer)
 		if err != nil {
-			controller.PanicResponse(c, err, http.StatusInternalServerError)
+			controller.PanicResponse(c, err, http.StatusUnauthorized)
 			c.Abort()
 			return
 		}
 
 		state, err := rbac.IsRequestGranted(c.Request, roles)
 		if err != nil {
-			controller.PanicResponse(c, err, http.StatusInternalServerError)
+			controller.PanicResponse(c, err, http.StatusUnauthorized)
 			c.Abort()
 			return
 		}
 
 		if !state.IsGranted() {
-			controller.PanicResponse(c, err, http.StatusInternalServerError)
+			controller.PanicResponse(c, err, http.StatusUnauthorized)
 			c.Abort()
 			return
 		}

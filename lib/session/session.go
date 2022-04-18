@@ -21,15 +21,15 @@ const LifeTime = 864000 * time.Second
 
 var sidReg = regexp.MustCompile(fmt.Sprintf("[a-z0-9]{%d}", SidLength))
 
-func NewSession(c *gin.Context) *session {
+func NewSession(cRequest *http.Request, cResponse gin.ResponseWriter) *session {
 	var sid string
-	cookie, _ := c.Request.Cookie(sessionName)
+	cookie, _ := cRequest.Cookie(sessionName)
 	if cookie == nil || !sidReg.MatchString(cookie.Value) {
 		sid = genSid()
 	} else {
 		sid = cookie.Value
 	}
-	http.SetCookie(c.Writer, &http.Cookie{Name: sessionName, Value: sid, Path: "/", HttpOnly: true, Secure: true, Expires: time.Now().Add(LifeTime)})
+	http.SetCookie(cResponse, &http.Cookie{Name: sessionName, Value: sid, Path: "/", HttpOnly: true, Secure: true, Expires: time.Now().Add(LifeTime)})
 	return &session{
 		sid: sid,
 	}

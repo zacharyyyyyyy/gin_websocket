@@ -8,9 +8,8 @@ const (
 
 func SelectOneByUsername(username string) (res *model.Admin, err error) {
 	db := model.DbConn.Table(_adminTable)
-	if err := db.Where("username = ?", username).Find(&res).Error; err != nil {
+	if err := db.Where("username = ?", username).Limit(1).Find(&res).Error; err != nil {
 		return nil, err
 	}
 	return
-
 }

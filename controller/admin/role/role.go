@@ -12,9 +12,8 @@ func GetAllAdminAuth(c *gin.Context) {
 	result, err := dao.GetAllAuthByEnable()
 	if err != nil {
 		controller.PanicResponse(c, err, http.StatusInternalServerError)
+		return
 	}
-	result1, err := dao.GetRoleByAuth(result[0].Id)
-	fmt.Println(result[0].Id)
-	fmt.Println(result1[0].Role)
+	fmt.Println(result)
 
 }

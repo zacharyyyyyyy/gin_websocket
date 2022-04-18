@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	UnexpectedSystemErrorMsg  = "此服务维护中，暂时不可用"
+	UnexpectedSystemErrorMsg  = "此服务忙碌中，请稍后重试"
 	UnauthorizedErrorMsg      = "权限校验失败"
 	ThirdPartyServiceErrorMsg = "服务暂不可用，有可能正在维护"
 )
