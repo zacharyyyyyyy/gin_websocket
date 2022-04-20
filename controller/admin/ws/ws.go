@@ -15,7 +15,7 @@ func ServiceLink(c *gin.Context) {
 	ctx, _ := context.WithCancel(context.Background())
 	serviceClient, err := ws.NewCustomerService(ctx, c.Request, c.Writer, c.ClientIP())
 	if err != nil {
-		controller.PanicResponse(c, err, http.StatusInternalServerError)
+		controller.PanicResponse(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	for {

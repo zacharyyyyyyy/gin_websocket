@@ -64,20 +64,20 @@ func AdminAuthentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		roles, err := QueryRoles(c.Request, c.Writer)
 		if err != nil {
-			controller.PanicResponse(c, err, http.StatusUnauthorized)
+			controller.PanicResponse(c, err, http.StatusUnauthorized, "")
 			c.Abort()
 			return
 		}
 
 		state, err := rbac.IsRequestGranted(c.Request, roles)
 		if err != nil {
-			controller.PanicResponse(c, err, http.StatusUnauthorized)
+			controller.PanicResponse(c, err, http.StatusUnauthorized, "")
 			c.Abort()
 			return
 		}
 
 		if !state.IsGranted() {
-			controller.PanicResponse(c, err, http.StatusUnauthorized)
+			controller.PanicResponse(c, err, http.StatusUnauthorized, "")
 			c.Abort()
 			return
 		}

@@ -104,6 +104,6 @@ func (l *Logger) locateField() zap.Field {
 
 //for io.writer
 func (l *Logger) Write(msg []byte) (int, error) {
-	l.Logger.Error(string(msg))
+	l.Logger.Debug(string(msg))
 	return len(msg), nil
 }

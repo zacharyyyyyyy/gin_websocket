@@ -1,10 +1,9 @@
-package login
+package admin
 
 import (
-	"net/http"
-
 	"gin_websocket/controller"
 	"gin_websocket/service/admin"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,10 +11,15 @@ import (
 func Login(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
-
 	err := admin.Login(username, password, c.Request, c.Writer)
 	if err != nil {
-		controller.PanicResponse(c, err, http.StatusInternalServerError)
+		respStruct := controller.ResponseStruct{
+			C:    c,
+			Data: nil,
+			Code: http.StatusInternalServerError,
+		}
+		respStruct.SetMessage(err.Error())
+		respStruct.JsonResponse()
 		return
 	}
 	controller.QuickSuccessResponse(c)

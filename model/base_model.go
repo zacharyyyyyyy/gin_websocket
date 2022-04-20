@@ -24,7 +24,7 @@ func init() {
 		log.New(logger.Model, "SQL log:", log.Lshortfile),
 		gLog.Config{
 			SlowThreshold: time.Second * 5, // 慢 SQL 阈值
-			LogLevel:      gLog.Error,      // Log level
+			LogLevel:      gLog.Info,       // Log level
 			Colorful:      false,           // 禁用彩色打印
 		})
 
