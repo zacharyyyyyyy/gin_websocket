@@ -3,7 +3,6 @@ package router_middleware
 import (
 	"gin_websocket/controller"
 	"gin_websocket/lib/session"
-	jsoniter "github.com/json-iterator/go"
 	"net/http"
 	"strconv"
 	"time"
@@ -52,7 +51,7 @@ func QueryRoles(cRequest *http.Request, cResponse gin.ResponseWriter) (roles []s
 	if err != nil {
 		return nil, err
 	}
-	_ = jsoniter.Unmarshal([]byte(roleString), roles)
+	roles = append(roles, roleString)
 	return
 }
 

@@ -13,13 +13,7 @@ func Login(c *gin.Context) {
 	password := c.PostForm("password")
 	err := admin.Login(username, password, c.Request, c.Writer)
 	if err != nil {
-		respStruct := controller.ResponseStruct{
-			C:    c,
-			Data: nil,
-			Code: http.StatusInternalServerError,
-		}
-		respStruct.SetMessage(err.Error())
-		respStruct.JsonResponse()
+		controller.PanicResponse(c, err, http.StatusInternalServerError, err.Error())
 		return
 	}
 	controller.QuickSuccessResponse(c)

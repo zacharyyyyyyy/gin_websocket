@@ -8,3 +8,12 @@ type Admin struct {
 	Role       int
 	CreateTime int
 }
+
+type AdminWithRole struct {
+	Id         int
+	Username   string
+	Name       string
+	RoleName   string
+	Describe   string
+	CreateTime int
+}

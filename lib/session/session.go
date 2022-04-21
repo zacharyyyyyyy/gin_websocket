@@ -29,7 +29,11 @@ func NewSession(cRequest *http.Request, cResponse gin.ResponseWriter) *session {
 	} else {
 		sid = cookie.Value
 	}
-	http.SetCookie(cResponse, &http.Cookie{Name: sessionName, Value: sid, Path: "/", HttpOnly: true, Secure: true, Expires: time.Now().Add(LifeTime)})
+	if gin.Mode() == gin.DebugMode {
+		http.SetCookie(cResponse, &http.Cookie{Name: sessionName, Value: sid, Path: "/", HttpOnly: false, Secure: false, Expires: time.Now().Add(LifeTime)})
+	} else {
+		http.SetCookie(cResponse, &http.Cookie{Name: sessionName, Value: sid, Path: "/", HttpOnly: true, Secure: true, Expires: time.Now().Add(LifeTime)})
+	}
 	return &session{
 		sid: sid,
 	}

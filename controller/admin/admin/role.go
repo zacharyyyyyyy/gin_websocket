@@ -48,6 +48,8 @@ func GetAllAdminAuth(c *gin.Context) {
 	}
 	data["data"] = authData
 	data["count"] = int(count)
+	data["pn"] = param.Pn
+	data["pc"] = param.Pc
 	ctl := controller.ResponseStruct{
 		C:    c,
 		Data: data,
