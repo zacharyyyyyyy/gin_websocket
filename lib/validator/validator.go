@@ -6,8 +6,16 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 )
+
+func init() {
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("existsAdminRole", roleValidator)
+		v.RegisterValidation("intValidate", intValidator)
+	}
+}
 
 func GetValidMsg(err error, obj interface{}) string {
 	fmt.Println(&obj)

@@ -1,11 +1,12 @@
 package admin
 
 import (
-	"gin_websocket/dao"
+	"html"
 	"net/http"
 	"time"
 
 	"gin_websocket/controller"
+	"gin_websocket/dao"
 	"gin_websocket/lib/validator"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +17,7 @@ func GetAllAdmin(c *gin.Context) {
 		Pn int `form:"pn" binding:"required,min=1" msg:"pn为整型且最小值为1"`
 		Pc int `form:"pc" binding:"required,min=1" msg:"pc为整型且最小值为1"`
 	})
-	if err := c.Bind(param); err != nil {
+	if err := c.ShouldBind(param); err != nil {
 		errMsg := validator.GetValidMsg(err, param)
 		controller.PanicResponse(c, err, http.StatusNotImplemented, errMsg)
 		return
@@ -56,4 +57,23 @@ func GetAllAdmin(c *gin.Context) {
 		Code: http.StatusOK,
 	}
 	ctl.JsonResponse()
+}
+
+func AddAdmin(c *gin.Context) {
+	param := new(struct {
+		Username string `form:"username" binding:"required,min=2" msg:"username为字符串且不能为空"`
+		Password string `form:"password" binding:"required" msg:"password为字符串型且不能为空"`
+		Name     string `form:"name" binding:"required" msg:"name为字符串型且不能为空"`
+		Role     string `form:"role" binding:"required,existsAdminRole,intValidate" msg:"role为字符串型且不能为空且必须为存在角色"`
+	})
+	if err := c.ShouldBind(param); err != nil {
+		errMsg := validator.GetValidMsg(err, param)
+		controller.PanicResponse(c, err, http.StatusNotImplemented, errMsg)
+		return
+	}
+	param.Name = html.EscapeString(param.Name)
+	param.Password = html.EscapeString(param.Password)
+	param.Name = html.EscapeString(param.Name)
+	controller.QuickSuccessResponse(c)
+
 }

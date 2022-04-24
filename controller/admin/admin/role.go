@@ -16,7 +16,7 @@ func GetAllAdminAuth(c *gin.Context) {
 		Pn int `form:"pn" binding:"required,min=1" msg:"pn为整型且最小值为1"`
 		Pc int `form:"pc" binding:"required,min=1" msg:"pc为整型且最小值为1"`
 	})
-	if err := c.Bind(param); err != nil {
+	if err := c.ShouldBind(param); err != nil {
 		errMsg := validator.GetValidMsg(err, param)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
