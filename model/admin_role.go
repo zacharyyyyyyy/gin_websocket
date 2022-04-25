@@ -6,3 +6,5 @@ type AdminRole struct {
 	Describe   string
 	CreateTime int
 }
+
+const TopRole = 1

@@ -8,6 +8,7 @@ import (
 	"gin_websocket/controller"
 	"gin_websocket/dao"
 	"gin_websocket/lib/validator"
+	"gin_websocket/service/admin"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,7 +20,7 @@ func GetAllAdmin(c *gin.Context) {
 	})
 	if err := c.ShouldBind(param); err != nil {
 		errMsg := validator.GetValidMsg(err, param)
-		controller.PanicResponse(c, err, http.StatusNotImplemented, errMsg)
+		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}
 	adminData := make([]interface{}, 0)
@@ -37,14 +38,14 @@ func GetAllAdmin(c *gin.Context) {
 		controller.PanicResponse(c, err, http.StatusInternalServerError, "")
 		return
 	}
-	for _, admin := range result {
+	for _, adminResult := range result {
 		adminData = append(adminData, map[string]interface{}{
-			"id":          admin.Id,
-			"name":        admin.Name,
-			"user_name":   admin.Username,
-			"role_name":   admin.RoleName,
-			"describe":    admin.Describe,
-			"create_time": time.Unix(int64(admin.CreateTime), 0).Format("2006-01-02 15:04:05"),
+			"id":          adminResult.Id,
+			"name":        adminResult.Name,
+			"user_name":   adminResult.Username,
+			"role_name":   adminResult.RoleName,
+			"describe":    adminResult.Describe,
+			"create_time": time.Unix(int64(adminResult.CreateTime), 0).Format("2006-01-02 15:04:05"),
 		})
 	}
 	data["data"] = adminData
@@ -64,16 +65,36 @@ func AddAdmin(c *gin.Context) {
 		Username string `form:"username" binding:"required,min=2" msg:"username为字符串且不能为空"`
 		Password string `form:"password" binding:"required" msg:"password为字符串型且不能为空"`
 		Name     string `form:"name" binding:"required" msg:"name为字符串型且不能为空"`
-		Role     string `form:"role" binding:"required,existsAdminRole,intValidate" msg:"role为字符串型且不能为空且必须为存在角色"`
+		Role     int    `form:"role" binding:"required,existsAdminRole" msg:"role为整型型且不能为空且必须为存在角色"`
 	})
 	if err := c.ShouldBind(param); err != nil {
 		errMsg := validator.GetValidMsg(err, param)
-		controller.PanicResponse(c, err, http.StatusNotImplemented, errMsg)
+		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}
+	param.Username = html.EscapeString(param.Username)
 	param.Name = html.EscapeString(param.Name)
-	param.Password = html.EscapeString(param.Password)
-	param.Name = html.EscapeString(param.Name)
+	param.Password = admin.ChangePassword(param.Password)
+	_ = dao.AddAdmin(param.Username, param.Name, param.Password, param.Role)
 	controller.QuickSuccessResponse(c)
+}
 
+func EditAdmin(c *gin.Context) {
+	param := new(struct {
+		Username string `form:"username" binding:"required,min=2" msg:"username为字符串且不能为空"`
+		Password string `form:"password" binding:"required" msg:"password为字符串型且不能为空"`
+		Name     string `form:"name" binding:"required" msg:"name为字符串型且不能为空"`
+		Role     int    `form:"role" binding:"required,existsAdminRole" msg:"role为整型型且不能为空且必须为存在角色"`
+		Id       int    `form:"id" binding:"required" msg:"id为整型且不能为空"`
+	})
+	if err := c.ShouldBind(param); err != nil {
+		errMsg := validator.GetValidMsg(err, param)
+		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
+		return
+	}
+	param.Username = html.EscapeString(param.Username)
+	param.Name = html.EscapeString(param.Name)
+	param.Password = admin.ChangePassword(param.Password)
+	_ = dao.EditAdmin(param.Username, param.Name, param.Password, param.Role, param.Id)
+	controller.QuickSuccessResponse(c)
 }

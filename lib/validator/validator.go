@@ -13,7 +13,6 @@ import (
 func init() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("existsAdminRole", roleValidator)
-		v.RegisterValidation("intValidate", intValidator)
 	}
 }
 

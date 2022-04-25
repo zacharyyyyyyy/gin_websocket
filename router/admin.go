@@ -14,12 +14,15 @@ func initAdminRoute(r *gin.Engine) {
 	adminRoute.POST("/login", admin.Login)
 	//adminRoute.Use(router_middleware.AdminAuthentication())
 	{
-		adminRoute.POST("/all_admin_user", admin.GetAllAdmin)
+		adminRoute.POST("/user", admin.GetAllAdmin)
 		adminRoute.POST("/user/add", admin.AddAdmin)
 		adminRoute.GET("/logout", admin.Logout)
 		adminRoute.POST("/info", ws.Info)
 		adminRoute.GET("/service_link", ws.ServiceLink)
-		adminRoute.POST("/admin_auth", admin.GetAllAdminAuth)
+		adminRoute.POST("/auth", admin.GetAllAdminAuth)
+		adminRoute.POST("/role", admin.GetAllRole)
+		adminRoute.POST("/role/add", admin.AddRole)
+
 	}
 	//pprof采集
 	{

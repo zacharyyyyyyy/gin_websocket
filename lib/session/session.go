@@ -1,14 +1,17 @@
 package session
 
 import (
+	"errors"
 	"fmt"
-	"gin_websocket/lib/redis"
-	"github.com/gin-gonic/gin"
 	"math/rand"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
+
+	"gin_websocket/lib/redis"
+
+	"github.com/gin-gonic/gin"
 )
 
 type session struct {
@@ -37,6 +40,24 @@ func NewSession(cRequest *http.Request, cResponse gin.ResponseWriter) *session {
 	return &session{
 		sid: sid,
 	}
+}
+
+func GetCurrent(cRequest *http.Request) (*session, error) {
+	var (
+		sid string
+		err error
+	)
+	cookie, _ := cRequest.Cookie(sessionName)
+	if cookie == nil || !sidReg.MatchString(cookie.Value) {
+		sid = ""
+		err = errors.New("未登录")
+	} else {
+		sid = cookie.Value
+		err = nil
+	}
+	return &session{
+		sid: sid,
+	}, err
 }
 
 func (session *session) GetString(key string) (string, error) {
