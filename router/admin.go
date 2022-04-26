@@ -14,14 +14,25 @@ func initAdminRoute(r *gin.Engine) {
 	adminRoute.POST("/login", admin.Login)
 	//adminRoute.Use(router_middleware.AdminAuthentication())
 	{
+		adminRoute.GET("/logout", admin.Logout)
 		adminRoute.POST("/user", admin.GetAllAdmin)
 		adminRoute.POST("/user/add", admin.AddAdmin)
-		adminRoute.GET("/logout", admin.Logout)
-		adminRoute.POST("/info", ws.Info)
-		adminRoute.GET("/service_link", ws.ServiceLink)
+		adminRoute.POST("/user/edit", admin.EditAdmin)
+		adminRoute.POST("/user/del", admin.DelAdmin)
+
 		adminRoute.POST("/auth", admin.GetAllAdminAuth)
 		adminRoute.POST("/role", admin.GetAllRole)
 		adminRoute.POST("/role/add", admin.AddRole)
+		adminRoute.POST("/role/edit", admin.EditRole)
+		adminRoute.POST("/role/del", admin.DelRole)
+
+		adminRoute.POST("/auth_map", admin.GetAllRoleAuth)
+		adminRoute.POST("/auth_map/add", admin.AddAuthMap)
+		adminRoute.POST("/auth_map/edit", admin.EditAuthMap)
+		adminRoute.POST("/auth_map/del", admin.DelAuthMap)
+
+		adminRoute.POST("/info", ws.Info)
+		adminRoute.GET("/service_link", ws.ServiceLink)
 
 	}
 	//pprof采集

@@ -98,3 +98,16 @@ func EditAdmin(c *gin.Context) {
 	_ = dao.EditAdmin(param.Username, param.Name, param.Password, param.Role, param.Id)
 	controller.QuickSuccessResponse(c)
 }
+
+func DelAdmin(c *gin.Context) {
+	param := new(struct {
+		Id int `form:"id" binding:"required" msg:"id为整型且不能为空"`
+	})
+	if err := c.ShouldBind(param); err != nil {
+		errMsg := validator.GetValidMsg(err, param)
+		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
+		return
+	}
+	_ = dao.DelAdmin(param.Id)
+	controller.QuickSuccessResponse(c)
+}

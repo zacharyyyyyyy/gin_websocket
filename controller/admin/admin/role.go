@@ -92,6 +92,54 @@ func DelRole(c *gin.Context) {
 	controller.QuickSuccessResponse(c)
 }
 
+func GetAllRoleAuth(c *gin.Context) {
+	param := new(struct {
+		Pn   int `form:"pn" binding:"required,min=1" msg:"pn为整型且最小值为1"`
+		Pc   int `form:"pc" binding:"required,min=1" msg:"pc为整型且最小值为1"`
+		Role int `form:"role" binding:"required,min=1" msg:"role为整型且最小值为1"`
+	})
+	if err := c.ShouldBind(param); err != nil {
+		errMsg := validator.GetValidMsg(err, param)
+		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
+		return
+	}
+	authMapData := make([]interface{}, 0)
+	data := make(map[string]interface{}, 0)
+	page := param.Pn
+	limit := param.Pc
+	offset := (page - 1) * limit
+
+	result, err := dao.GetAllAuthMapByRole(limit, offset, param.Role)
+	if err != nil {
+		controller.PanicResponse(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	count, err := dao.GetAuthMapCount()
+	if err != nil {
+		controller.PanicResponse(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	for _, authMap := range result {
+		authMapData = append(authMapData, map[string]interface{}{
+			"role":          authMap.Role,
+			"auth":          authMap.Auth,
+			"role_name":     authMap.RoleName,
+			"role_describe": authMap.RoleDescribe,
+			"auth_name":     authMap.AuthName,
+		})
+	}
+	data["data"] = authMapData
+	data["count"] = int(count)
+	data["pn"] = param.Pn
+	data["pc"] = param.Pc
+	ctl := controller.ResponseStruct{
+		C:    c,
+		Data: data,
+		Code: http.StatusOK,
+	}
+	ctl.JsonResponse()
+}
+
 func AddAuthMap(c *gin.Context) {
 	param := new(struct {
 		Role int `form:"role" binding:"required,min=1" msg:"role为整型且不能为空"`
