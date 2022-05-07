@@ -19,6 +19,7 @@ type baseConf struct {
 	wsConf    WebsocketConf
 	redisConf RedisConf
 	dbConf    DbConf
+	mqConf    MqConf
 }
 
 var BaseConf = &baseConf{}
@@ -81,6 +82,12 @@ func (ConfHandle *baseConf) GetDbConf() DbConf {
 	ConfHandle.lock.RLock()
 	defer ConfHandle.lock.RUnlock()
 	return ConfHandle.dbConf
+}
+
+func (ConfHandle *baseConf) GetMqConf() MqConf {
+	ConfHandle.lock.RLock()
+	defer ConfHandle.lock.RUnlock()
+	return ConfHandle.mqConf
 }
 
 func match(confMap ConfMap) (*ini.Section, error) {

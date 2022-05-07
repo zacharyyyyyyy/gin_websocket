@@ -23,5 +23,4 @@ func Link(c *gin.Context) {
 			break
 		}
 	}
-
 }

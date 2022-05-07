@@ -5,7 +5,6 @@ go 1.15
 require (
 	github.com/BurntSushi/toml v1.0.0 // indirect
 	github.com/gin-contrib/gzip v0.0.5
-	github.com/gin-contrib/pprof v1.3.0
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-ini/ini v1.66.3
 	github.com/go-playground/validator/v10 v10.10.0
@@ -16,6 +15,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.19.0 // indirect
 	github.com/storyicon/grbac v0.0.0-20200224041032-a0461737df7e
+	github.com/streadway/amqp v1.0.0
 	github.com/ugorji/go v1.2.6 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
