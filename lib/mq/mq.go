@@ -1,104 +1,119 @@
 package mq
 
 import (
+	"context"
+	"errors"
 	"gin_websocket/lib/config"
-	jsoniter "github.com/json-iterator/go"
+	"gin_websocket/lib/logger"
 	"github.com/streadway/amqp"
+	"time"
 )
 
 type mqClient struct {
-	client *amqp.Connection
+	client   *amqp.Connection
+	Exchange *amqp.Channel
 }
 
 var Mq mqClient = newClient()
 
+var (
+	timeoutErr = errors.New("服务超时")
+)
+
+var (
+	timeout            = 5 * time.Second
+	QueueKeySms string = "sms"
+)
+
 func newClient() mqClient {
+	var err error
 	mqConf := config.BaseConf.GetMqConf()
 	url := "amqp://" + mqConf.User + ":" + mqConf.Pwd + "@" + mqConf.Host + ":" + mqConf.Port + "/"
-	conn, _ := amqp.Dial(url)
-	return mqClient{client: conn}
+	conn, err := amqp.Dial(url)
+	if err != nil {
+		logger.Runtime.Error(err.Error())
+		return mqClient{
+			client:   nil,
+			Exchange: nil,
+		}
+	}
+	ch, err := conn.Channel()
+	if err != nil {
+		logger.Runtime.Error(err.Error())
+		return mqClient{
+			client:   nil,
+			Exchange: nil,
+		}
+	}
+	err = ch.ExchangeDeclare(
+		"amq.direct", //交换机名称
+		"direct",     //交换机类型
+		true,         //持久化
+		false,        //是否自动化删除
+		false,        //是否内置交换机
+		false,        //是否等待服务器确认
+		nil,
+	)
+	queue, err := ch.QueueDeclare(
+		"sms:queue",
+		true,  //持久化
+		false, //自动删除
+		false, //排他
+		false, //是否等待服务确认
+		nil,
+	)
+	if err != nil {
+		logger.Runtime.Error(err.Error())
+		return mqClient{
+			client:   nil,
+			Exchange: nil,
+		}
+	}
+	err = ch.QueueBind(
+		queue.Name,
+		QueueKeySms,
+		"amq.direct",
+		true,
+		nil,
+	)
+	if err != nil {
+		logger.Runtime.Error(err.Error())
+		return mqClient{
+			client:   nil,
+			Exchange: nil,
+		}
+	}
+	return mqClient{client: conn, Exchange: ch}
 }
 
-func (client mqClient) Send() {
+func (client mqClient) close() {
+	_ = client.Exchange.Close()
+	_ = client.client.Close()
+}
 
-	defer conn.Close()
-	ch, err := conn.Channel()
-	handleError(err)
-	err = ch.ExchangeDeclare(
-		"amq.fanout",
-		"fanout",
-		true,
-		false,
-		false,
-		false,
-		nil)
-	handleError(err)
-	defer ch.Close()
-
-	q, err := ch.QueueDeclare(
-		"simple:queue",
-		false,
-		false,
-		false,
-		false,
-		nil)
-	handleError(err)
-	q2, err := ch.QueueDeclare(
-		"another:queue",
-		false,
-		false,
-		false,
-		false,
-		nil)
-	handleError(err)
-	err = ch.QueueBind(
-		q.Name,
-		"",
-		"amq.direct",
-		true,
-		nil)
-	err = ch.QueueBind(
-		q2.Name,
-		"",
-		"amq.direct",
-		true,
-		nil)
-
-	data := simpleDemo{
-		Name: "Tom",
-		Addr: "Beijing",
+func (client mqClient) Send(dataBytes []byte, qKey string) error {
+	var err error
+	var done = make(chan struct{})
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	go func() {
+		err = client.Exchange.Publish(
+			"amq.direct",
+			qKey,
+			false,
+			false,
+			amqp.Publishing{
+				ContentType:  "text/plain",
+				DeliveryMode: amqp.Persistent,
+				Body:         dataBytes,
+			})
+		done <- struct{}{}
+	}()
+	select {
+	case <-ctx.Done():
+		return timeoutErr
+	case <-done:
+		cancel()
+		return err
 	}
-	databytes, err := jsoniter.Marshal(data)
-	handleError(err)
-	//data2 := simpleDemo{
-	//	Name: "test",
-	//	Addr: "error",
-	//}
-	//databytes2, err := jsoniter.Marshal(data2)
-	//handleError(err)
 
-	err = ch.Publish(
-		"amq.direct",
-		"",
-		false,
-		false,
-		amqp.Publishing{
-			ContentType:  "text/plain",
-			DeliveryMode: amqp.Persistent,
-			Body:         databytes,
-		})
-	handleError(err)
-
-	//err = ch.Publish(
-	//	"amq.direct",
-	//	"error",
-	//	false,
-	//	false,
-	//	amqp.Publishing{
-	//		ContentType:  "text/plain",
-	//		DeliveryMode: amqp.Persistent,
-	//		Body:         databytes2,
-	//	})
-	//handleError(err)
-	fmt.Println("has publish msg")
 }

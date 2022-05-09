@@ -103,5 +103,5 @@ func match(confMap ConfMap) (*ini.Section, error) {
 
 func recordError(error error, confMap ConfMap) {
 	errString := fmt.Sprintf("%s:%s", error, confMap.getSectionName())
-	logger.Service.Error(errString)
+	logger.Runtime.Error(errString)
 }

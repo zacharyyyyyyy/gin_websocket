@@ -51,6 +51,6 @@ func init() {
 	// SetConnMaxLifetime 设置了连接可复用的最大时间。
 	sqlDB.SetConnMaxLifetime(time.Duration(dbConf.ConnMaxLifetimeMinus) * time.Minute)
 	if err != nil {
-		logger.Service.Error(err.Error())
+		logger.Runtime.Error(err.Error())
 	}
 }
