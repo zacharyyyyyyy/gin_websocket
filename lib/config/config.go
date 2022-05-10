@@ -40,6 +40,7 @@ func (ConfHandle *baseConf) Load() {
 		wsConf = &WebsocketConf{}
 		rdConf = &RedisConf{}
 		dbConf = &DbConf{}
+		mqConf = &MqConf{}
 	)
 	if cfg, err := match(wsConf); err == nil {
 		err := cfg.MapTo(wsConf)
@@ -63,6 +64,14 @@ func (ConfHandle *baseConf) Load() {
 			recordError(IniSectionNotFoundErr, dbConf)
 		} else {
 			BaseConf.dbConf = *dbConf
+		}
+	}
+	if cfg, err := match(mqConf); err == nil {
+		err := cfg.MapTo(mqConf)
+		if err != nil {
+			recordError(IniSectionNotFoundErr, mqConf)
+		} else {
+			BaseConf.mqConf = *mqConf
 		}
 	}
 }
