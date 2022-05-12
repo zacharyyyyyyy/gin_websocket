@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gin_websocket/dao"
+	"gin_websocket/service/taskqueue"
+	"gin_websocket/service/taskqueue/consumer"
 	jsoniter "github.com/json-iterator/go"
+	"golang.org/x/sync/semaphore"
 	"time"
 
 	"gin_websocket/lib/config"
@@ -24,13 +26,18 @@ type SendMap map[string]interface{}
 var MqServer mqClient = newClient()
 
 var (
-	timeoutErr = errors.New("服务超时")
+	TimeoutErr              = errors.New("服务超时，请稍后重试")
+	InsufficientResourceErr = errors.New("服务忙碌，请稍后重试")
 )
 
 var (
-	retryTimes         = 3
-	timeout            = 5 * time.Second
-	QueueKeySms string = "sms"
+	retryTimes = 3
+	timeout    = 5 * time.Second
+	//限制goroutine数量
+	goroutineLimit  int64  = 300
+	goroutineWeight int64  = 1
+	sema                   = semaphore.NewWeighted(goroutineLimit)
+	QueueKeySms     string = "sms"
 )
 
 func newClient() mqClient {
@@ -94,19 +101,35 @@ func (client mqClient) Send(data SendMap, qKey string) error {
 			break
 		}
 		if tryTimes == retryTimes {
-			//todo
-			dao.AddTask()
+			//超过次数放入taskqueue作处理
+			taskMap := make(map[string]interface{})
+			taskMap["data"] = data
+			taskMap["qKey"] = qKey
+			taskqueue.AddTask(consumer.TypeMq, taskMap, int(time.Now().Add(30*time.Second).Unix()))
 		}
 	}
 	return err
 }
 
+//for taskqueue
+func (client mqClient) TaskSingleSend(data SendMap, qKey string) error {
+	return client.send(data, qKey)
+}
+
 func (client mqClient) send(data SendMap, qKey string) error {
-	var err error
-	var done = make(chan struct{}, 1)
+	var (
+		err      error
+		done     = make(chan struct{}, 1)
+		semaChan = make(chan struct{}, 1)
+	)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	dataBytes, _ := jsoniter.Marshal(data)
 	go func() {
+		if !sema.TryAcquire(goroutineWeight) {
+			semaChan <- struct{}{}
+			return
+		}
+		_ = sema.Acquire(context.Background(), goroutineWeight)
 		err = client.Exchange.Publish(
 			"amq.direct",
 			qKey,
@@ -117,15 +140,18 @@ func (client mqClient) send(data SendMap, qKey string) error {
 				DeliveryMode: amqp.Persistent,
 				Body:         dataBytes,
 			})
-
+		sema.Release(goroutineWeight)
 		done <- struct{}{}
 	}()
 	select {
 	case <-ctx.Done():
-		return timeoutErr
+		return TimeoutErr
 	case <-done:
 		cancel()
 		return err
+	case <-semaChan:
+		cancel()
+		return InsufficientResourceErr
 	}
 }
 

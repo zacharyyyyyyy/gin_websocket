@@ -45,7 +45,7 @@ func Start() {
 
 //定时释放webcoket
 func cleanClient(ctx context.Context, Cont *WsContainer, timeDuration time.Duration) {
-	timer := time.NewTimer(timeDuration)
+	timer := time.NewTicker(timeDuration)
 	defer timer.Stop()
 	for {
 		select {
@@ -67,7 +67,6 @@ func cleanClient(ctx context.Context, Cont *WsContainer, timeDuration time.Durat
 
 				logger.Service.Info(fmt.Sprintf("websocket clear, ip:%s", ip))
 			}
-			timer.Reset(timeDuration)
 		case <-ctx.Done():
 			logger.Service.Info("websocket Cleanclient Func close")
 			return

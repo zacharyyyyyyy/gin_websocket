@@ -12,7 +12,7 @@ const (
 
 func SelectMultiByStatusAndLimitAndOffset(status, limit, offset int) (res []*model.Taskqueue, err error) {
 	db := model.DbConn.Table(_taskqueueTable)
-	if err := db.Where("status = ? AND begin_time < ?", status, time.Now().Unix()).Order("begin_time DESC").Limit(limit).Offset(offset).Find(res).Error; err != nil {
+	if err = db.Where("status = ? AND begin_time < ?", status, time.Now().Unix()).Order("begin_time DESC").Limit(limit).Offset(offset).Find(&res).Error; err != nil {
 		return nil, err
 	}
 	return
@@ -28,4 +28,20 @@ func AddTask(typeString string, param map[string]interface{}, beginTime int) err
 		BeginTime:  beginTime,
 	}
 	return db.Create(saveTask).Error
+}
+
+func DelTask(id int) error {
+	db := model.DbConn.Table(_taskqueueTable)
+	if err := db.Where("id = ?", id).Delete(&model.Taskqueue{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func DelayTask(id int) error {
+	db := model.DbConn.Table(_taskqueueTable)
+	if err := db.Where("id = ?", id).Update("status", model.StatusNotBegin).Error; err != nil {
+		return err
+	}
+	return nil
 }
