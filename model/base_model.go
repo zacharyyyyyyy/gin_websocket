@@ -37,10 +37,12 @@ func init() {
 	err = DbConn.Use(dbresolver.Register(
 		dbresolver.Config{
 			Sources: []gorm.Dialector{
+				mysql.Open(dbString),
+			},
+			Replicas: []gorm.Dialector{
 				mysql.Open(slaveDbString),
 			},
-			Replicas: nil,
-			Policy:   dbresolver.RandomPolicy{},
+			Policy: dbresolver.RandomPolicy{},
 		}),
 	)
 	sqlDB, _ := DbConn.DB()

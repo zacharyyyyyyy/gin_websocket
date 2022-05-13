@@ -22,10 +22,11 @@ var (
 )
 
 var (
-	Api     = Get("api")
-	Service = Get("service")
-	Runtime = Get("runtime")
-	Model   = Get("model")
+	Api       = Get("api")
+	Service   = Get("service")
+	Runtime   = Get("runtime")
+	Model     = Get("model")
+	TaskQueue = Get("taskqueue")
 )
 
 func Get(filename string) *Logger {

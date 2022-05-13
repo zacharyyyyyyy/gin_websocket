@@ -3,6 +3,7 @@ package taskqueue
 import (
 	"context"
 	"errors"
+	"fmt"
 	"gin_websocket/dao"
 	"gin_websocket/lib/logger"
 	"gin_websocket/model"
@@ -11,6 +12,12 @@ import (
 
 type TaskHandler interface {
 	Exec(param map[string]interface{}) error
+}
+
+type Task struct {
+	taskId      int
+	TaskHandler TaskHandler
+	param       map[string]interface{}
 }
 
 var (
@@ -24,12 +31,12 @@ var (
 	taskHandlerMap = make(map[string]func() TaskHandler)
 )
 
-func Start() {
-	go start()
-}
-
 func RegisterTask(taskName string, f func() TaskHandler) {
 	taskHandlerMap[taskName] = f
+}
+
+func Start() {
+	go start()
 }
 
 func start() {
@@ -40,14 +47,21 @@ func start() {
 		case <-timeTicker.C:
 			taskStructArray, err := dao.SelectMultiByStatusAndLimitAndOffset(model.StatusNotBegin, taskEachCount, 0)
 			if err != nil {
-				logger.Service.Error(err.Error())
+				logger.TaskQueue.Error(err.Error())
 				continue
 			}
 			if len(taskStructArray) > 0 {
 				for _, taskStruct := range taskStructArray {
 					handler, err := getTask(taskStruct.Type)
 					if err != nil {
-						//todo
+						//task := Task{
+						//	taskId:      taskStruct.Id,
+						//	TaskHandler: nil,
+						//	param:       ,
+						//}
+					} else {
+						wrapErr := fmt.Errorf("%w:%s", err, taskStruct.Type)
+						logger.TaskQueue.Error(wrapErr.Error())
 					}
 				}
 
@@ -56,19 +70,22 @@ func start() {
 	}
 }
 
-func getTask(taskName string) (TaskHandler, error) {
+func getTask(taskName string) (Task, error) {
 	if f, ok := taskHandlerMap[taskName]; ok {
-		return f(), nil
+		return Task{}, nil
 	}
-	return nil, taskHandlerNotFoundErr
+	return Task{}, taskHandlerNotFoundErr
 }
 
-func run(ctx context.Context, handler TaskHandler, param map[string]interface{}) error {
+func (task Task) run(ctx context.Context) error {
 	done := make(chan struct{}, 1)
 	go func() {
-		err := handler.Exec(param)
+		err := task.TaskHandler.Exec(task.param)
 		if err != nil {
-			logger.Service.Error(err.Error())
+			logger.TaskQueue.Error(err.Error())
+			task.delayTask()
+		} else {
+			task.delayTask()
 		}
 		done <- struct{}{}
 	}()
@@ -80,18 +97,18 @@ func run(ctx context.Context, handler TaskHandler, param map[string]interface{})
 	}
 }
 
+func (task Task) delTask() {
+	_ = dao.DelTask(task.taskId)
+}
+
+func (task Task) delayTask() {
+	_ = dao.DelayTask(task.taskId)
+}
+
 func AddTask(typeString string, param map[string]interface{}, beginTime int) {
 	err := dao.AddTask(typeString, param, beginTime)
 	if err != nil {
 		logger.Service.Error(err.Error())
 		return
 	}
-}
-
-func delTask(id int) {
-	_ = dao.DelTask(id)
-}
-
-func delayTask(id int) {
-	_ = dao.DelayTask(id)
 }
