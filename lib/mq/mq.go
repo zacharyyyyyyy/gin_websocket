@@ -4,21 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gin_websocket/service/taskqueue"
-	"gin_websocket/service/taskqueue/consumer"
-	jsoniter "github.com/json-iterator/go"
-	"golang.org/x/sync/semaphore"
 	"time"
 
 	"gin_websocket/lib/config"
 	"gin_websocket/lib/logger"
+	"gin_websocket/model"
+	"gin_websocket/service/taskqueue"
+	jsoniter "github.com/json-iterator/go"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/streadway/amqp"
 )
 
 type mqClient struct {
 	client   *amqp.Connection
-	Exchange *amqp.Channel
+	exchange *amqp.Channel
 }
 
 type SendMap map[string]interface{}
@@ -50,7 +50,7 @@ func newClient() mqClient {
 		logger.Runtime.Error(err.Error())
 		return mqClient{
 			client:   nil,
-			Exchange: nil,
+			exchange: nil,
 		}
 	}
 	ch, err := conn.Channel()
@@ -58,7 +58,7 @@ func newClient() mqClient {
 		logger.Runtime.Error(err.Error())
 		return mqClient{
 			client:   nil,
-			Exchange: nil,
+			exchange: nil,
 		}
 	}
 	err = ch.ExchangeDeclare(
@@ -74,7 +74,7 @@ func newClient() mqClient {
 		logger.Runtime.Error(err.Error())
 		return mqClient{
 			client:   nil,
-			Exchange: nil,
+			exchange: nil,
 		}
 	}
 	err = bindQueue(ch, QueueKeySms)
@@ -82,14 +82,14 @@ func newClient() mqClient {
 		logger.Runtime.Error(err.Error())
 		return mqClient{
 			client:   nil,
-			Exchange: nil,
+			exchange: nil,
 		}
 	}
-	return mqClient{client: conn, Exchange: ch}
+	return mqClient{client: conn, exchange: ch}
 }
 
 func (client mqClient) close() {
-	_ = client.Exchange.Close()
+	_ = client.exchange.Close()
 	_ = client.client.Close()
 }
 
@@ -105,7 +105,7 @@ func (client mqClient) Send(data SendMap, qKey string) error {
 			taskMap := make(map[string]interface{})
 			taskMap["data"] = data
 			taskMap["qKey"] = qKey
-			taskqueue.AddTask(consumer.TypeMq, taskMap, int(time.Now().Add(30*time.Second).Unix()))
+			taskqueue.AddTask(model.TypeMq, taskMap, int(time.Now().Add(30*time.Second).Unix()))
 		}
 	}
 	return err
@@ -130,7 +130,7 @@ func (client mqClient) send(data SendMap, qKey string) error {
 			return
 		}
 		_ = sema.Acquire(context.Background(), goroutineWeight)
-		err = client.Exchange.Publish(
+		err = client.exchange.Publish(
 			"amq.direct",
 			qKey,
 			false,

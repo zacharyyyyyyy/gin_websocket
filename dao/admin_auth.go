@@ -9,7 +9,7 @@ const (
 )
 
 func GetAllAuthByEnable() (res []*model.AdminAuth, err error) {
-	db := model.DbConn.Table(_adminAuthTable)
+	db := model.DbConn.GetSlaveDb().Table(_adminAuthTable)
 	if err = db.Where("enable = ?", 1).Order("id ASC").Find(&res).Error; err != nil {
 		return nil, err
 	}
@@ -17,7 +17,7 @@ func GetAllAuthByEnable() (res []*model.AdminAuth, err error) {
 }
 
 func GetAuthByLimitAndOffset(limit, offset int) (res []*model.AdminAuth, err error) {
-	db := model.DbConn.Table(_adminAuthTable)
+	db := model.DbConn.GetSlaveDb().Table(_adminAuthTable)
 	if err = db.Where("enable = ?", 1).Limit(limit).Offset(offset).Order("id ASC").Find(&res).Error; err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func GetAuthByLimitAndOffset(limit, offset int) (res []*model.AdminAuth, err err
 }
 
 func GetAllAuthCountByEnable() (count int64, err error) {
-	db := model.DbConn.Table(_adminAuthTable)
+	db := model.DbConn.GetSlaveDb().Table(_adminAuthTable)
 	if err = db.Where("enable = ?", 1).Count(&count).Error; err != nil {
 		return 0, err
 	}
