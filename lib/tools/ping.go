@@ -31,6 +31,7 @@ func Ping(domain string) (bool, error) {
 	//fmt.Println(buffer.Bytes())
 	binary.Write(&buffer, binary.BigEndian, originBytes[0:48])
 	b := buffer.Bytes()
+	//转大端序
 	binary.BigEndian.PutUint16(b[2:], checkSum(b))
 	if _, err := conn.Write(buffer.Bytes()); err != nil {
 		return false, err
