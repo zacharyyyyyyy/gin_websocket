@@ -48,7 +48,7 @@ func Info(c *gin.Context) {
 		serviceClientMap["ws_key"] = wsKey
 		var serviceClientId interface{}
 		if serviceClient.GetBindUser() != nil {
-			serviceClientId = serviceClient.GetBindUser().Id
+			//serviceClientId = serviceClient.GetBindUser().Id
 		}
 		serviceClientMap["bind_user"] = serviceClientId
 		serviceClientMapSlice = append(serviceClientMapSlice, serviceClientMap)

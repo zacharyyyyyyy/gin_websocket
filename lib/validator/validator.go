@@ -17,7 +17,6 @@ func init() {
 }
 
 func GetValidMsg(err error, obj interface{}) string {
-	fmt.Println(&obj)
 	getObj := reflect.TypeOf(obj)
 	if errs, ok := err.(validator.ValidationErrors); ok {
 		for _, e := range errs {

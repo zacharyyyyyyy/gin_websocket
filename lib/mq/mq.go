@@ -3,7 +3,6 @@ package mq
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"gin_websocket/lib/config"
@@ -44,7 +43,6 @@ func newClient() mqClient {
 	var err error
 	mqConf := config.BaseConf.GetMqConf()
 	url := "amqp://" + mqConf.User + ":" + mqConf.Pwd + "@" + mqConf.Host + ":" + mqConf.Port + "/"
-	fmt.Println(url)
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		logger.Runtime.Error(err.Error())

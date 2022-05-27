@@ -4,7 +4,8 @@ import (
 	"gin_websocket/controller/admin/admin"
 	"gin_websocket/controller/admin/ws"
 	"gin_websocket/controller/perf"
-	//"gin_websocket/middleware/router_middleware"
+
+	"gin_websocket/middleware/router_middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,7 +13,7 @@ import (
 func initAdminRoute(r *gin.Engine) {
 	adminRoute := r.Group("/admin")
 	adminRoute.POST("/login", admin.Login)
-	//adminRoute.Use(router_middleware.AdminAuthentication())
+	adminRoute.Use(router_middleware.AdminAuthentication())
 	{
 		adminRoute.GET("/logout", admin.Logout)
 		adminRoute.POST("/user", admin.GetAllAdmin)

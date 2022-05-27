@@ -48,16 +48,13 @@ func NewUserClient(ctx context.Context, cRequest *http.Request, cResponse gin.Re
 		lock:                &sync.Mutex{},
 		bindCustomerService: nil,
 	}
-
 	err = WsContainerHandle.NewClient(userClient)
-
 	return userClient, err
 }
 
 func (user *UserClient) Close() error {
 	if user.bindCustomerService != nil {
 		closeMsg := Message{
-			Id:             "",
 			Content:        "当前聊天结束",
 			SendTime:       time.Now(),
 			WebsocketKey:   user.Id,
@@ -68,7 +65,7 @@ func (user *UserClient) Close() error {
 	}
 	_ = WsContainerHandle.remove(user)
 	if user.bindCustomerService != nil {
-		user.bindCustomerService.unbind(true)
+		user.bindCustomerService.unbind(user.Id)
 	}
 	user.unbind()
 	if err := user.conn.Close(); err != nil {
@@ -78,11 +75,13 @@ func (user *UserClient) Close() error {
 }
 
 func (user *UserClient) Receive() error {
-	var customerService *CustomerServiceClient
-	var content map[string]interface{}
-	var msgType int
-	var err error
-	var contentString string
+	var (
+		customerService *CustomerServiceClient
+		content         map[string]interface{}
+		msgType         int
+		err             error
+		contentString   string
+	)
 
 	msgType, byteMsg, err := user.conn.ReadMessage()
 	if err != nil {
@@ -101,13 +100,13 @@ func (user *UserClient) Receive() error {
 	}
 	user.ChatLastTime = time.Now()
 	_ = redis.RedisDb.RPush("websocket_user_"+string(user.Id), "user:"+string(byteMsg))
+	_ = redis.RedisDb.Expire("websocket_user_"+string(user.Id), 100*time.Second)
 	if user.bindCustomerService != nil {
 		customerService = user.bindCustomerService
 	} else {
 		customerService, err = getCustomerService()
 		if err != nil {
 			msg := Message{
-				Id:             "",
 				Content:        err.Error(),
 				SendTime:       time.Now(),
 				WebsocketKey:   "",
@@ -127,7 +126,6 @@ func (user *UserClient) Receive() error {
 		contentString = ""
 	}
 	msg := Message{
-		Id:             "",
 		Content:        contentString,
 		SendTime:       time.Now(),
 		WebsocketKey:   user.Id,
