@@ -1,9 +1,12 @@
 package dao
 
 import (
-	"gin_websocket/model"
-	jsoniter "github.com/json-iterator/go"
+	"gorm.io/gorm"
 	"time"
+
+	"gin_websocket/model"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 const (
@@ -38,14 +41,14 @@ func DelTask(id int) error {
 	return nil
 }
 
-func DelayTask(id int) error {
+func DelayTask(id int, time time.Time) error {
 	db := model.DbConn.GetMasterDb().Table(_taskqueueTable)
-	if err := db.Where("id = ?", id).Update("status", model.StatusNotBegin).Error; err != nil {
+	if err := db.Where("id = ?", id).Updates(map[string]interface{}{"status": model.StatusNotBegin, "begin_time": time.Unix(), "retry_times": gorm.Expr("retry_times + ?", 1)}).Error; err != nil {
 		return err
 	}
 	return nil
 }
-func UpdateStatus(id int) error {
+func UpdateStatusToRunning(id int) error {
 	db := model.DbConn.GetMasterDb().Table(_taskqueueTable)
 	if err := db.Where("id = ?", id).Update("status", model.StatusRunning).Error; err != nil {
 		return err

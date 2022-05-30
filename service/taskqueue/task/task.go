@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"golang.org/x/sync/semaphore"
 	"time"
 
 	"gin_websocket/dao"
@@ -31,8 +32,13 @@ var (
 var (
 	taskEachCount  = 10
 	timeDuration   = 3 * time.Second
-	eachTaskTime   = 10 * time.Second
+	eachTaskTime   = 30 * time.Second
+	taskTimeDelay  = 180 * time.Second
 	taskHandlerMap = make(map[string]func() Handler)
+	//限制任务goroutine数
+	taskGoroutineMaxCount int64 = 100
+	taskGoroutineEach     int64 = 0
+	sema                        = semaphore.NewWeighted(taskGoroutineMaxCount)
 )
 
 func Start() {
@@ -63,11 +69,16 @@ func start() {
 					wrapErr := fmt.Errorf("%w(id:%d,type:%s)", err, taskStruct.Id, taskStruct.Type)
 					logger.TaskQueue.Error(wrapErr.Error())
 				} else {
-					runtimeErr := handler.run()
-					if runtimeErr != nil {
-						wrapErr := fmt.Errorf("%w(id:%d)", runtimeErr, taskStruct.Id)
-						logger.TaskQueue.Error(wrapErr.Error())
+					if !sema.TryAcquire(taskGoroutineEach) {
+						continue
 					}
+					go func(taskHandler Task, taskId int) {
+						runtimeErr := taskHandler.run()
+						if runtimeErr != nil {
+							wrapErr := fmt.Errorf("%w(id:%d)", runtimeErr, taskId)
+							logger.TaskQueue.Error(wrapErr.Error())
+						}
+					}(handler, taskStruct.Id)
 				}
 			}
 		}
@@ -91,14 +102,17 @@ func (task Task) run() error {
 	var runtimeErr error
 	ctx, cancel := context.WithTimeout(context.Background(), eachTaskTime)
 	done := make(chan struct{}, 1)
+	task.runningTask()
 	go func() {
 		err := task.TaskHandler.Exec(task.param)
 		if err != nil {
 			runtimeErr = err
-			task.delayTask()
+			task.delayTask(time.Now().Add(taskTimeDelay))
 		} else {
 			task.delTask()
 		}
+		//释放信号量
+		sema.Release(taskGoroutineEach)
 		done <- struct{}{}
 	}()
 	select {
@@ -114,10 +128,10 @@ func (task Task) delTask() {
 	_ = dao.DelTask(task.taskId)
 }
 
-func (task Task) delayTask() {
-	_ = dao.DelayTask(task.taskId)
+func (task Task) delayTask(time time.Time) {
+	_ = dao.DelayTask(task.taskId, time)
 }
 
 func (task Task) runningTask() {
-	_ = dao.UpdateStatus(task.taskId)
+	_ = dao.UpdateStatusToRunning(task.taskId)
 }

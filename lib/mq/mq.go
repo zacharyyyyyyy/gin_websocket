@@ -127,7 +127,6 @@ func (client mqClient) send(data SendMap, qKey string) error {
 			semaChan <- struct{}{}
 			return
 		}
-		_ = sema.Acquire(context.Background(), goroutineWeight)
 		err = client.exchange.Publish(
 			"amq.direct",
 			qKey,
