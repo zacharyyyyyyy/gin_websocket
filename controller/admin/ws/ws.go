@@ -6,12 +6,21 @@ import (
 	"net/http"
 
 	"gin_websocket/controller"
+	"gin_websocket/lib/validator"
 	ws "gin_websocket/service/websocket"
 
 	"github.com/gin-gonic/gin"
 )
 
 func ServiceLink(c *gin.Context) {
+	param := new(struct {
+		WsKey string `form:"ws_key" binding:"required,min=1" msg:"ws_key为字符串且不能为空"`
+	})
+	if err := c.ShouldBind(param); err != nil {
+		errMsg := validator.GetValidMsg(err, param)
+		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
+		return
+	}
 	ctx, _ := context.WithCancel(context.Background())
 	serviceClient, err := ws.NewCustomerService(ctx, c.Request, c.Writer, c.ClientIP())
 	if err != nil {
@@ -19,12 +28,11 @@ func ServiceLink(c *gin.Context) {
 		return
 	}
 	for {
-		err := serviceClient.Receive()
+		err := serviceClient.Receive(ws.WsKey(param.WsKey))
 		if errors.Is(err, ws.CloseErr) {
 			break
 		}
 	}
-
 }
 
 func Info(c *gin.Context) {
@@ -46,9 +54,10 @@ func Info(c *gin.Context) {
 	}
 	for wsKey, serviceClient := range ws.CustomerServiceContainerHandle.WebsocketCustomerServiceMap {
 		serviceClientMap["ws_key"] = wsKey
+		bindUserMap := make([]string, 0)
 		var serviceClientId interface{}
-		if serviceClient.GetBindUser() != nil {
-			//serviceClientId = serviceClient.GetBindUser().Id
+		for _, userClient := range serviceClient.GetAllBindUser() {
+			bindUserMap = append(bindUserMap, string(userClient.Id))
 		}
 		serviceClientMap["bind_user"] = serviceClientId
 		serviceClientMapSlice = append(serviceClientMapSlice, serviceClientMap)
