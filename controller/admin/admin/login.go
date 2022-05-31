@@ -19,7 +19,7 @@ func Login(c *gin.Context) {
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}
-	err := admin.Login(param.Username, param.Password, c.Request, c.Writer)
+	err := admin.Login(param.Username, param.Password, c.Request, c.Writer, c.ClientIP())
 	if err != nil {
 		controller.PanicResponse(c, err, http.StatusInternalServerError, err.Error())
 		return

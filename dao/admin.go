@@ -21,6 +21,14 @@ func SelectOneByUsername(username string) (res *model.Admin, err error) {
 	return
 }
 
+func SelectOneById(id int) (res *model.Admin, err error) {
+	db := model.DbConn.GetSlaveDb().Table(_adminTable)
+	if err := db.Where("id = ?", id).Limit(1).Find(&res).Error; err != nil {
+		return nil, err
+	}
+	return
+}
+
 func GetAllAdminByLimitAndOffset(limit, offset int) (res []*model.AdminWithRole, err error) {
 	db := model.DbConn.GetSlaveDb().Table(_adminTable)
 	db.Select("admin.id, admin.username, admin.name, admin_role.name as role_name, admin_role.describe, admin.create_time")
@@ -75,7 +83,7 @@ func DelAdmin(id int) error {
 	return nil
 }
 
-func GetCurrent(cRequest *http.Request) (res *model.Admin, err error) {
+func GetAdminCurrent(cRequest *http.Request) (res *model.Admin, err error) {
 	sessionStruct, err := session.GetCurrent(cRequest)
 	if err != nil {
 		return nil, errors.New("未登录")

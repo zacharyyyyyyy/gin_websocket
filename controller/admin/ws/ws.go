@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"gin_websocket/controller"
+	"gin_websocket/dao"
 	"gin_websocket/lib/validator"
 	ws "gin_websocket/service/websocket"
 
@@ -22,7 +23,13 @@ func ServiceLink(c *gin.Context) {
 		return
 	}
 	ctx, _ := context.WithCancel(context.Background())
-	serviceClient, err := ws.NewCustomerService(ctx, c.Request, c.Writer, c.ClientIP())
+	adminStruct, err := dao.GetAdminCurrent(c.Request)
+	if err != nil {
+		controller.PanicResponse(c, err, http.StatusInternalServerError, "未登录")
+		return
+	}
+
+	serviceClient, err := ws.NewCustomerService(ctx, c.Request, c.Writer, c.ClientIP(), adminStruct.Id)
 	if err != nil {
 		controller.PanicResponse(c, err, http.StatusInternalServerError, "")
 		return
@@ -33,6 +40,10 @@ func ServiceLink(c *gin.Context) {
 			break
 		}
 	}
+}
+
+func GetLinkUser(c *gin.Context) {
+
 }
 
 func Info(c *gin.Context) {
@@ -52,8 +63,11 @@ func Info(c *gin.Context) {
 		userClientMapSlice = append(userClientMapSlice, userClientMap)
 
 	}
-	for wsKey, serviceClient := range ws.CustomerServiceContainerHandle.WebsocketCustomerServiceMap {
-		serviceClientMap["ws_key"] = wsKey
+	for adminId, serviceClient := range ws.CustomerServiceContainerHandle.WebsocketCustomerServiceMap {
+		serviceClientMap["ws_key"] = serviceClient.Id
+		serviceClientMap["admin_id"] = adminId
+		admin, _ := dao.SelectOneById(adminId)
+		serviceClientMap["admin_name"] = admin.Name
 		bindUserMap := make([]string, 0)
 		var serviceClientId interface{}
 		for _, userClient := range serviceClient.GetAllBindUser() {

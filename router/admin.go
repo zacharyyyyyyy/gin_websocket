@@ -12,7 +12,7 @@ import (
 
 func initAdminRoute(r *gin.Engine) {
 	adminRoute := r.Group("/admin")
-	adminRoute.POST("/login", admin.Login)
+	adminRoute.POST("/login", router_middleware.LoginLimit, admin.Login)
 	adminRoute.Use(router_middleware.AdminAuthentication())
 	{
 		adminRoute.GET("/logout", admin.Logout)

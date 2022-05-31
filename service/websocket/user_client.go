@@ -14,12 +14,6 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-type userClientMethod interface {
-	Close() error
-	SendMsg(msg Message) error
-	Ping()
-}
-
 type UserClient struct {
 	Id                  WsKey
 	conn                *websocket.Conn

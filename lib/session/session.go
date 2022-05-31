@@ -20,7 +20,7 @@ type session struct {
 
 const SidLength = 32
 const sessionName = "gid"
-const LifeTime = 864000 * time.Second
+const LifeTime = 86400 * time.Second
 
 var sidReg = regexp.MustCompile(fmt.Sprintf("[a-z0-9]{%d}", SidLength))
 

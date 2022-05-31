@@ -12,13 +12,9 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-type customerServiceMethod interface {
-	Close() error
-	SendMsg(msg Message) error
-}
-
 type CustomerServiceClient struct {
 	Id                     WsKey
+	AdminId                int
 	conn                   *websocket.Conn
 	LastTime               time.Time
 	ChatLastTime           time.Time
@@ -29,7 +25,7 @@ type CustomerServiceClient struct {
 	selectingUserClientKey WsKey
 }
 
-func NewCustomerService(ctx context.Context, cRequest *http.Request, cResponse gin.ResponseWriter, ip string) (*CustomerServiceClient, error) {
+func NewCustomerService(ctx context.Context, cRequest *http.Request, cResponse gin.ResponseWriter, ip string, adminId int) (*CustomerServiceClient, error) {
 	if !websocket.IsWebSocketUpgrade(cRequest) {
 		return nil, WrongConnErr
 	}
@@ -39,6 +35,7 @@ func NewCustomerService(ctx context.Context, cRequest *http.Request, cResponse g
 	}
 	customerServiceClient := &CustomerServiceClient{
 		Id:                     WsKey(cRequest.Header.Get("Sec-Websocket-Key")),
+		AdminId:                adminId,
 		conn:                   ws,
 		LastTime:               time.Now(),
 		Ip:                     ip,

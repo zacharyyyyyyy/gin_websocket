@@ -4,15 +4,16 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
+	"gin_websocket/dao"
 	"gin_websocket/lib/logger"
+	"gin_websocket/lib/redis"
+	"gin_websocket/lib/session"
+	"gin_websocket/lib/tools"
+	"gin_websocket/model"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
-
-	"gin_websocket/dao"
-	"gin_websocket/lib/session"
-	"gin_websocket/model"
-
-	"github.com/gin-gonic/gin"
+	"time"
 )
 
 var (
@@ -46,19 +47,21 @@ func ChangePassword(password string) string {
 	return hexString
 }
 
-func Login(username, password string, cRequest *http.Request, cResponse gin.ResponseWriter) error {
+func Login(username, password string, cRequest *http.Request, cResponse gin.ResponseWriter, ip string) error {
 	adminId, err := verifyPassword(username, password)
 	if err != nil {
-		logger.Service.Error(err.Error())
+		if ip == "::1" {
+			ip = "127.0.0.1"
+		}
+		_ = redis.RedisDb.Incr("login_limit_ip_" + ip)
+		_ = redis.RedisDb.Expire("login_limit_ip_"+ip, tools.GetNextDayStartTime().Sub(time.Now()))
 		return VerifyUsernameAndPasswordFailErr
 	}
 	sessionCtl := session.NewSession(cRequest, cResponse)
 	if err = sessionCtl.Set("role", strconv.Itoa(adminId.Role)); err != nil {
-		logger.Service.Error(err.Error())
 		return UnKnownErr
 	}
 	if err = sessionCtl.Set("admin", strconv.Itoa(adminId.Id)); err != nil {
-		logger.Service.Error(err.Error())
 		return UnKnownErr
 	}
 	return nil
