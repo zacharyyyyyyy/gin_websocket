@@ -8,7 +8,7 @@ import (
 type WsContainer struct {
 	WebSocketClientMap   map[WsKey]*UserClient
 	lock                 *sync.RWMutex
-	ClientWebSocketCount int
+	clientWebSocketCount uint
 }
 
 //容器加载
@@ -17,7 +17,7 @@ func userStart() *WsContainer {
 	WsContainerHandle := &WsContainer{
 		WebSocketClientMap:   client,
 		lock:                 &sync.RWMutex{},
-		ClientWebSocketCount: 0,
+		clientWebSocketCount: 0,
 	}
 	return WsContainerHandle
 }
@@ -27,8 +27,8 @@ func (Cont *WsContainer) NewClient(userClient *UserClient) error {
 	return Cont.append(userClient)
 }
 
-func (Cont WsContainer) GetConnCount() int {
-	return Cont.ClientWebSocketCount
+func (Cont WsContainer) GetConnCount() uint {
+	return Cont.clientWebSocketCount
 }
 
 //主动删除
@@ -43,12 +43,12 @@ func (Cont *WsContainer) Remove(userClient *UserClient) error {
 func (Cont *WsContainer) append(userClient *UserClient) error {
 	Cont.lock.Lock()
 	defer Cont.lock.Unlock()
-	if Cont.ClientWebSocketCount > wsConf.MaxConnection {
+	if Cont.clientWebSocketCount > wsConf.MaxConnection {
 		return TooManyConnectionErr
 	}
 	if _, ok := Cont.WebSocketClientMap[userClient.Id]; !ok {
 		Cont.WebSocketClientMap[userClient.Id] = userClient
-		Cont.ClientWebSocketCount++
+		Cont.clientWebSocketCount++
 		return nil
 	}
 	return ClientAlreadyInContainer
@@ -62,6 +62,6 @@ func (Cont *WsContainer) remove(userClient *UserClient) error {
 		return ClientNotFoundErr
 	}
 	delete(Cont.WebSocketClientMap, userClient.Id)
-	Cont.ClientWebSocketCount--
+	Cont.clientWebSocketCount--
 	return nil
 }

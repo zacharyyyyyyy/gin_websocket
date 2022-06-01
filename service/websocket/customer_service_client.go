@@ -25,6 +25,21 @@ type CustomerServiceClient struct {
 	selectingUserClientKey WsKey
 }
 
+func RegisterService(ip string, adminId int) {
+	customerServiceClient := &CustomerServiceClient{
+		Id:                     "",
+		AdminId:                adminId,
+		conn:                   nil,
+		LastTime:               time.Now(),
+		Ip:                     ip,
+		ctx:                    nil,
+		lock:                   &sync.Mutex{},
+		bindUserClientSlice:    make(map[WsKey]*UserClient),
+		selectingUserClientKey: "",
+	}
+	CustomerServiceContainerHandle.NewClient(customerServiceClient)
+}
+
 func NewCustomerService(ctx context.Context, cRequest *http.Request, cResponse gin.ResponseWriter, ip string, adminId int) (*CustomerServiceClient, error) {
 	if !websocket.IsWebSocketUpgrade(cRequest) {
 		return nil, WrongConnErr
@@ -33,20 +48,28 @@ func NewCustomerService(ctx context.Context, cRequest *http.Request, cResponse g
 	if err != nil {
 		return nil, ClientBuildFailErr
 	}
-	customerServiceClient := &CustomerServiceClient{
-		Id:                     WsKey(cRequest.Header.Get("Sec-Websocket-Key")),
-		AdminId:                adminId,
-		conn:                   ws,
-		LastTime:               time.Now(),
-		Ip:                     ip,
-		ctx:                    ctx,
-		lock:                   &sync.Mutex{},
-		bindUserClientSlice:    make(map[WsKey]*UserClient),
-		selectingUserClientKey: "",
+	var customerServiceClient *CustomerServiceClient
+	if _, ok := CustomerServiceContainerHandle.WebsocketCustomerServiceMap[adminId]; !ok {
+		customerServiceClient = &CustomerServiceClient{
+			Id:                     WsKey(cRequest.Header.Get("Sec-Websocket-Key")),
+			AdminId:                adminId,
+			conn:                   ws,
+			LastTime:               time.Now(),
+			Ip:                     ip,
+			ctx:                    ctx,
+			lock:                   &sync.Mutex{},
+			bindUserClientSlice:    make(map[WsKey]*UserClient),
+			selectingUserClientKey: "",
+		}
+	} else {
+		customerServiceClient = CustomerServiceContainerHandle.WebsocketCustomerServiceMap[adminId]
+		customerServiceClient.Id = WsKey(cRequest.Header.Get("Sec-Websocket-Key"))
+		customerServiceClient.conn = ws
+		customerServiceClient.LastTime = time.Now()
+		customerServiceClient.ctx = ctx
 	}
-
-	err = CustomerServiceContainerHandle.NewClient(customerServiceClient)
-	return customerServiceClient, err
+	CustomerServiceContainerHandle.NewClient(customerServiceClient)
+	return customerServiceClient, nil
 }
 
 func (cusServ *CustomerServiceClient) Close() error {
@@ -97,6 +120,11 @@ func (cusServ *CustomerServiceClient) Receive(wskey WsKey) error {
 		cusServ.ping()
 		return nil
 	}
+	cusServ.lock.Lock()
+	if cusServ.selectingUserClientKey != wskey {
+		cusServ.selectingUserClientKey = wskey
+	}
+	cusServ.lock.Unlock()
 	cusServ.ChatLastTime = time.Now()
 	userClient, ok := cusServ.bindUserClientSlice[wskey]
 	if !ok {

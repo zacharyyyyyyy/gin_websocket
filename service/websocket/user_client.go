@@ -114,6 +114,18 @@ func (user *UserClient) Receive() error {
 		_ = user.bind(customerService)
 		_ = customerService.bindUser(user)
 	}
+	//客服当前连接对象非本人时
+	if customerService.selectingUserClientKey != user.Id {
+		msg := Message{
+			Content:        "客服忙碌中请稍候~",
+			SendTime:       time.Now(),
+			WebsocketKey:   "",
+			ToWebsocketKey: user.Id,
+			Type:           chatType,
+		}
+		_ = user.send(msg)
+		return nil
+	}
 	if contentStr, ok := content["content"].(string); ok {
 		contentString = contentStr
 	} else {

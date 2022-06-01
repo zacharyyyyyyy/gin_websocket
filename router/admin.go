@@ -32,8 +32,10 @@ func initAdminRoute(r *gin.Engine) {
 		adminRoute.POST("/auth_map/edit", admin.EditAuthMap)
 		adminRoute.POST("/auth_map/del", admin.DelAuthMap)
 
-		adminRoute.POST("/info", ws.Info)
-		adminRoute.GET("/service_link", ws.ServiceLink)
+		adminRoute.POST("/ws", ws.Register)
+		adminRoute.POST("/ws/info", ws.Info)
+		adminRoute.GET("/ws/link", ws.ServiceLink)
+		adminRoute.POST("/ws/link_user", ws.GetLinkUser)
 
 	}
 	//pprof采集

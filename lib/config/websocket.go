@@ -1,10 +1,10 @@
 package config
 
 type WebsocketConf struct {
-	PingLastTimeSec   int
-	ChatLastTimeSec   int
-	CleanLimitTimeSec int
-	MaxConnection     int
+	PingLastTimeSec   uint
+	ChatLastTimeSec   uint
+	CleanLimitTimeSec uint
+	MaxConnection     uint
 }
 
 func (WsConf WebsocketConf) getPath() string {
