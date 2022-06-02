@@ -23,11 +23,21 @@ func Register(c *gin.Context) {
 	controller.QuickSuccessResponse(c)
 }
 
+func Cancel(c *gin.Context) {
+	adminStruct, err := dao.GetAdminCurrent(c.Request)
+	if err != nil {
+		controller.PanicResponse(c, err, http.StatusInternalServerError, "未登录")
+		return
+	}
+	_ = ws.CustomerServiceContainerHandle.Remove(adminStruct.Id)
+	controller.QuickSuccessResponse(c)
+}
+
 func ServiceLink(c *gin.Context) {
 	param := new(struct {
 		WsKey string `form:"ws_key" binding:"required,min=1" msg:"ws_key为字符串且不能为空"`
 	})
-	if err := c.ShouldBind(param); err != nil {
+	if err := c.BindQuery(param); err != nil {
 		errMsg := validator.GetValidMsg(err, param)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return

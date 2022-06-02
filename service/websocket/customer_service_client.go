@@ -72,31 +72,6 @@ func NewCustomerService(ctx context.Context, cRequest *http.Request, cResponse g
 	return customerServiceClient, nil
 }
 
-func (cusServ *CustomerServiceClient) Close() error {
-	if len(cusServ.bindUserClientSlice) > 0 {
-		for _, userClient := range cusServ.bindUserClientSlice {
-			closeMsg := Message{
-				Content:        "当前聊天结束",
-				SendTime:       time.Now(),
-				WebsocketKey:   cusServ.Id,
-				ToWebsocketKey: userClient.Id,
-				Type:           closeType,
-			}
-			_ = userClient.send(closeMsg)
-			//用户取消关联
-			userClient.unbind()
-		}
-	}
-	_ = CustomerServiceContainerHandle.remove(cusServ)
-	//自身清空全部 关联
-	cusServ.unbind("")
-	//关闭连接
-	if err := cusServ.conn.Close(); err != nil {
-		return ClientNotFoundErr
-	}
-	return nil
-}
-
 func (cusServ *CustomerServiceClient) Receive(wskey WsKey) error {
 	var (
 		userClient    *UserClient
@@ -109,7 +84,7 @@ func (cusServ *CustomerServiceClient) Receive(wskey WsKey) error {
 	if err != nil {
 		if msgType == -1 {
 			//关闭当前链接
-			_ = cusServ.Close()
+			cusServ.closeSelecting()
 			return CloseErr
 		} else {
 			logger.Service.Error(err.Error())
@@ -156,6 +131,51 @@ func (cusServ *CustomerServiceClient) Receive(wskey WsKey) error {
 	return err
 }
 
+func (cusServ *CustomerServiceClient) close() error {
+	if len(cusServ.bindUserClientSlice) > 0 {
+		for _, userClient := range cusServ.bindUserClientSlice {
+			closeMsg := Message{
+				Content:        "当前聊天结束",
+				SendTime:       time.Now(),
+				WebsocketKey:   cusServ.Id,
+				ToWebsocketKey: userClient.Id,
+				Type:           closeType,
+			}
+			_ = userClient.send(closeMsg)
+			//用户取消关联
+			userClient.unbind()
+		}
+	}
+	_ = CustomerServiceContainerHandle.remove(cusServ)
+	//自身清空全部 关联
+	cusServ.unbind("")
+	//关闭连接
+	if err := cusServ.conn.Close(); err != nil {
+		return ClientNotFoundErr
+	}
+	return nil
+}
+
+func (cusServ *CustomerServiceClient) closeSelecting() {
+	cusServ.lock.Lock()
+	defer cusServ.lock.Unlock()
+	selectingUserClient := cusServ.bindUserClientSlice[cusServ.selectingUserClientKey]
+	closeMsg := Message{
+		Content:        "当前聊天结束",
+		SendTime:       time.Now(),
+		WebsocketKey:   cusServ.Id,
+		ToWebsocketKey: selectingUserClient.Id,
+		Type:           closeType,
+	}
+	_ = selectingUserClient.send(closeMsg)
+	selectingUserClient.unbind()
+	//用户取消关联
+	cusServ.bindUserClientSlice[cusServ.selectingUserClientKey].unbind()
+	delete(cusServ.bindUserClientSlice, cusServ.selectingUserClientKey)
+	cusServ.selectingUserClientKey = ""
+
+}
+
 func (cusServ *CustomerServiceClient) GetAllBindUser() map[WsKey]*UserClient {
 	return cusServ.bindUserClientSlice
 }
@@ -168,14 +188,16 @@ func (cusServ *CustomerServiceClient) bindUser(user *UserClient) error {
 		return ClientAlreadyBoundErr
 	}
 	cusServ.bindUserClientSlice[user.Id] = user
-	msg := Message{
-		Content:        "新用户接入",
-		SendTime:       time.Now(),
-		WebsocketKey:   "",
-		ToWebsocketKey: cusServ.Id,
-		Type:           connectType,
+	if cusServ.conn != nil {
+		msg := Message{
+			Content:        "新用户接入",
+			SendTime:       time.Now(),
+			WebsocketKey:   "",
+			ToWebsocketKey: cusServ.Id,
+			Type:           connectType,
+		}
+		_ = cusServ.send(msg)
 	}
-	_ = cusServ.send(msg)
 	return nil
 }
 
@@ -208,7 +230,7 @@ func (cusServ *CustomerServiceClient) ping() {
 //超时关闭
 func (cusServ *CustomerServiceClient) timeout() error {
 	if cusServ.LastTime.Unix() < (time.Now().Unix()-int64(wsConf.PingLastTimeSec)) || cusServ.ChatLastTime.Unix() < (time.Now().Unix()-int64(wsConf.ChatLastTimeSec)) {
-		if err := cusServ.Close(); err != nil {
+		if err := cusServ.close(); err != nil {
 			return ClientNotFoundErr
 		}
 	}

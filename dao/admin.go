@@ -93,7 +93,7 @@ func GetAdminCurrent(cRequest *http.Request) (res *model.Admin, err error) {
 		return nil, errors.New("未登录")
 	}
 	db := model.DbConn.GetSlaveDb().Table(_adminTable)
-	if err = db.Where("id = ?", adminId).Limit(1).Find(res).Error; err != nil {
+	if err = db.Where("id = ?", adminId).Limit(1).Find(&res).Error; err != nil {
 		return nil, err
 	}
 	return

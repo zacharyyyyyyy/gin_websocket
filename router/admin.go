@@ -36,6 +36,7 @@ func initAdminRoute(r *gin.Engine) {
 		adminRoute.POST("/ws/info", ws.Info)
 		adminRoute.GET("/ws/link", ws.ServiceLink)
 		adminRoute.POST("/ws/link_user", ws.GetLinkUser)
+		adminRoute.POST("/ws/close", ws.Cancel)
 
 	}
 	//pprof采集

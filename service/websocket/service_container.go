@@ -34,11 +34,11 @@ func (Cont CustomerServiceContainer) GetConnCount() uint {
 }
 
 //主动删除
-func (Cont *CustomerServiceContainer) Remove(customerServiceClient *CustomerServiceClient) error {
-	if _, ok := Cont.WebsocketCustomerServiceMap[customerServiceClient.AdminId]; !ok {
+func (Cont *CustomerServiceContainer) Remove(adminId int) error {
+	if _, ok := Cont.WebsocketCustomerServiceMap[adminId]; !ok {
 		return ClientNotFoundErr
 	}
-	err := Cont.WebsocketCustomerServiceMap[customerServiceClient.AdminId].Close()
+	err := Cont.WebsocketCustomerServiceMap[adminId].close()
 	return err
 }
 
