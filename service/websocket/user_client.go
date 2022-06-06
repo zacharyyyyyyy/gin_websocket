@@ -76,7 +76,6 @@ func (user *UserClient) Receive() error {
 		err             error
 		contentString   string
 	)
-
 	msgType, byteMsg, err := user.conn.ReadMessage()
 	if err != nil {
 		if msgType == -1 {

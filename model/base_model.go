@@ -61,7 +61,7 @@ func newDb(dbConf config.DbConf, dbString string) *gorm.DB {
 		log.New(logger.Model, "SQL log:", log.Lshortfile),
 		gLog.Config{
 			SlowThreshold: time.Second * 5, // 慢 SQL 阈值
-			LogLevel:      gLog.Info,       // Log level
+			LogLevel:      gLog.Warn,       // Log level
 			Colorful:      false,           // 禁用彩色打印
 		})
 

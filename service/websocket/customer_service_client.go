@@ -212,6 +212,9 @@ func (cusServ *CustomerServiceClient) unbind(wsKey WsKey) {
 }
 
 func (cusServ *CustomerServiceClient) send(msg Message) error {
+	if cusServ.conn == nil {
+		return nil
+	}
 	var msgMap = make(map[string]interface{}, 0)
 	msgMap["content"] = msg.Content
 	msgMap["send_time"] = msg.SendTime.Format("2006-01-02 15:04:05")
