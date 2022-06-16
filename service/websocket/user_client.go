@@ -92,8 +92,10 @@ func (user *UserClient) Receive() error {
 		return nil
 	}
 	user.ChatLastTime = time.Now()
-	_ = redis.RedisDb.RPush("websocket_user_"+string(user.Id), "user:"+string(byteMsg))
-	_ = redis.RedisDb.Expire("websocket_user_"+string(user.Id), 100*time.Second)
+	go func() {
+		_ = redis.RedisDb.RPush("websocket_user_"+string(user.Id), "user:"+string(byteMsg))
+		_ = redis.RedisDb.Expire("websocket_user_"+string(user.Id), 100*time.Second)
+	}()
 	if user.bindCustomerService != nil {
 		customerService = user.bindCustomerService
 	} else {

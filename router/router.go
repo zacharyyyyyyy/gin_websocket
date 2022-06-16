@@ -12,6 +12,7 @@ func InitRouter() *gin.Engine {
 		r.Use(gin.Logger())
 	}
 	r.Use(gzip.Gzip(gzip.DefaultCompression), global_middleware.Cors, global_middleware.HttpTrace, global_middleware.HttpRecover)
+	r.NoRoute(global_middleware.NoRouteHandle)
 	initAdminRoute(r)
 	initApiRoute(r)
 	return r

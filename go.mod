@@ -3,7 +3,9 @@ module gin_websocket
 go 1.15
 
 require (
+	bou.ke/monkey v1.0.2 // indirect
 	github.com/BurntSushi/toml v1.0.0 // indirect
+	github.com/agiledragon/gomonkey v2.0.2+incompatible // indirect
 	github.com/gin-contrib/gzip v0.0.5
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-ini/ini v1.66.3
