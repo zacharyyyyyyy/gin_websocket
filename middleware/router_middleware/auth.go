@@ -76,7 +76,7 @@ func AdminAuthentication() gin.HandlerFunc {
 		}
 
 		if !state.IsGranted() {
-			controller.PanicResponse(c, err, http.StatusUnauthorized, "未登录")
+			controller.PanicResponse(c, err, http.StatusUnauthorized, "未授权")
 			c.Abort()
 			return
 		}

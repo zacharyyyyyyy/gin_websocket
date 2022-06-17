@@ -12,13 +12,13 @@ const (
 	UnauthorizedErrorMsg      = "权限校验失败"
 	ParameterErrorMsg         = "参数错误，请稍后重试"
 	ThirdPartyServiceErrorMsg = "服务暂不可用，有可能正在维护"
-	PermissionErrMsg          = "权限不足"
 )
 
 var DefaultErrorMsgMap = map[int]string{
 	http.StatusInternalServerError: UnexpectedSystemErrorMsg,
 	http.StatusUnauthorized:        UnauthorizedErrorMsg,
 	http.StatusNotImplemented:      ParameterErrorMsg,
+	http.StatusServiceUnavailable:  ThirdPartyServiceErrorMsg,
 }
 
 type ResponseStruct struct {

@@ -8,9 +8,10 @@ import (
 	"sync"
 )
 
-type ConfMap interface {
+type confHandle interface {
 	getPath() string
 	getSectionName() string
+	register()
 }
 
 type baseConf struct {
@@ -42,38 +43,7 @@ func (ConfHandle *baseConf) Load() {
 		dbConf = &DbConf{}
 		mqConf = &MqConf{}
 	)
-	if cfg, err := match(wsConf); err == nil {
-		err := cfg.MapTo(wsConf)
-		if err != nil {
-			recordError(IniSectionNotFoundErr, wsConf)
-		} else {
-			BaseConf.wsConf = *wsConf
-		}
-	}
-	if cfg, err := match(rdConf); err == nil {
-		err := cfg.MapTo(rdConf)
-		if err != nil {
-			recordError(IniSectionNotFoundErr, rdConf)
-		} else {
-			BaseConf.redisConf = *rdConf
-		}
-	}
-	if cfg, err := match(dbConf); err == nil {
-		err := cfg.MapTo(dbConf)
-		if err != nil {
-			recordError(IniSectionNotFoundErr, dbConf)
-		} else {
-			BaseConf.dbConf = *dbConf
-		}
-	}
-	if cfg, err := match(mqConf); err == nil {
-		err := cfg.MapTo(mqConf)
-		if err != nil {
-			recordError(IniSectionNotFoundErr, mqConf)
-		} else {
-			BaseConf.mqConf = *mqConf
-		}
-	}
+	register(wsConf, rdConf, dbConf, mqConf)
 }
 
 func (ConfHandle *baseConf) GetWsConf() WebsocketConf {
@@ -99,7 +69,7 @@ func (ConfHandle *baseConf) GetMqConf() MqConf {
 	return ConfHandle.mqConf
 }
 
-func match(confMap ConfMap) (*ini.Section, error) {
+func match(confMap confHandle) (*ini.Section, error) {
 	iniPath := confMap.getPath()
 	iniSection := confMap.getSectionName()
 	cfg, err := ini.Load(iniPath)
@@ -110,7 +80,13 @@ func match(confMap ConfMap) (*ini.Section, error) {
 	return cfg.Section(iniSection), nil
 }
 
-func recordError(error error, confMap ConfMap) {
+func register(confMapArray ...confHandle) {
+	for _, confMap := range confMapArray {
+		confMap.register()
+	}
+}
+
+func recordError(error error, confMap confHandle) {
 	errString := fmt.Sprintf("%s:%s", error, confMap.getSectionName())
 	logger.Runtime.Error(errString)
 }

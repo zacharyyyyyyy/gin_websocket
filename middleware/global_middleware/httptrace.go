@@ -2,15 +2,13 @@ package global_middleware
 
 import (
 	"fmt"
-	jsoniter "github.com/json-iterator/go"
 	"io/ioutil"
-
-	//"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"gin_websocket/service/tracer"
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/gin-gonic/gin"
 )
@@ -43,7 +41,6 @@ func HttpTrace(c *gin.Context) {
 		for queryKey, queryVal := range c.Request.URL.Query() {
 			param = append(param, fmt.Sprintf("%s:%s", queryKey, queryVal))
 		}
-
 	case http.MethodDelete:
 		fallthrough
 	case http.MethodPut:

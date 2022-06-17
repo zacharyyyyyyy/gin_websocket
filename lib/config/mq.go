@@ -14,3 +14,14 @@ func (MqConf MqConf) getPath() string {
 func (MqConf MqConf) getSectionName() string {
 	return "Mq"
 }
+
+func (MqConf MqConf) register() {
+	if cfg, err := match(&MqConf); err == nil {
+		err := cfg.MapTo(&MqConf)
+		if err != nil {
+			recordError(IniSectionNotFoundErr, &MqConf)
+		} else {
+			BaseConf.mqConf = MqConf
+		}
+	}
+}

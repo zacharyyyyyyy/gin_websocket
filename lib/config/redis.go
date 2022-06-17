@@ -14,3 +14,14 @@ func (RdConf RedisConf) getPath() string {
 func (RdConf RedisConf) getSectionName() string {
 	return "Redis"
 }
+
+func (RdConf RedisConf) register() {
+	if cfg, err := match(&RdConf); err == nil {
+		err := cfg.MapTo(&RdConf)
+		if err != nil {
+			recordError(IniSectionNotFoundErr, &RdConf)
+		} else {
+			BaseConf.redisConf = RdConf
+		}
+	}
+}

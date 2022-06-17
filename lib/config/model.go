@@ -27,3 +27,14 @@ func (DbConf DbConf) getPath() string {
 func (DbConf DbConf) getSectionName() string {
 	return "Db"
 }
+
+func (DbConf DbConf) register() {
+	if cfg, err := match(&DbConf); err == nil {
+		err := cfg.MapTo(&DbConf)
+		if err != nil {
+			recordError(IniSectionNotFoundErr, &DbConf)
+		} else {
+			BaseConf.dbConf = DbConf
+		}
+	}
+}

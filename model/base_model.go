@@ -26,8 +26,6 @@ var (
 	DbNotFoundErr = errors.New("数据库未配置")
 )
 
-//var DbConn *gorm.DB
-
 func init() {
 	dbConf := config.BaseConf.GetDbConf()
 	dbString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s&parseTime=True", dbConf.UsernameMaster, dbConf.PasswordMaster, dbConf.HostMaster, dbConf.PortMaster, dbConf.DatabaseMaster, "utf8")

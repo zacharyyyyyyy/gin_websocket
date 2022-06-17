@@ -14,3 +14,14 @@ func (WsConf WebsocketConf) getPath() string {
 func (WsConf WebsocketConf) getSectionName() string {
 	return "Websocket"
 }
+
+func (WsConf WebsocketConf) register() {
+	if cfg, err := match(&WsConf); err == nil {
+		err := cfg.MapTo(&WsConf)
+		if err != nil {
+			recordError(IniSectionNotFoundErr, &WsConf)
+		} else {
+			BaseConf.wsConf = WsConf
+		}
+	}
+}
