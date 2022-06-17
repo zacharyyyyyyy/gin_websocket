@@ -9,6 +9,7 @@ import (
 )
 
 type kafkaClient struct {
+	producer sarama.AsyncProducer
 }
 
 var KafkaServer kafkaClient = newClient()
@@ -32,9 +33,10 @@ func newClient() kafkaClient {
 		logger.Runtime.Error(fmt.Errorf("producer_test create producer error :%s\n", err.Error()).Error())
 		return kafkaClient{}
 	}
+	return kafkaClient{producer: producer}
+}
 
-	defer producer.AsyncClose()
-
+func (client kafkaClient) Send(topic string, data map[string]interface{}) (offset int64, time int64, err error) {
 	// send message
 	msg := &sarama.ProducerMessage{
 		Topic:     "kafka_go_test",
@@ -49,20 +51,17 @@ func newClient() kafkaClient {
 	fmt.Printf("input [%s]\n", msgContent)
 	// send to chain
 
-	producer.Input() <- msg
+	client.producer.Input() <- msg
 
 	select {
-	case suc := <-producer.Successes():
-		fmt.Printf("offset: %d,  timestamp: %s", suc.Offset, suc.Timestamp.String())
-	case fail := <-producer.Errors():
+	case suc := <-client.producer.Successes():
+		return suc.Offset, suc.Timestamp.Unix(), nil
+	case fail := <-client.producer.Errors():
 		fmt.Printf("err: %s\n", fail.Err.Error())
+		return 0, 0, fail.Err
 	}
 }
 
-func (client kafkaClient) Send(data map[string]interface{}) {
-
-}
-
 func (client kafkaClient) Close() {
-
+	client.producer.AsyncClose()
 }
