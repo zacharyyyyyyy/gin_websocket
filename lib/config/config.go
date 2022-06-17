@@ -3,9 +3,11 @@ package config
 import (
 	"errors"
 	"fmt"
-	"gin_websocket/lib/logger"
-	"github.com/go-ini/ini"
 	"sync"
+
+	"gin_websocket/lib/logger"
+
+	"github.com/go-ini/ini"
 )
 
 type confHandle interface {
@@ -21,6 +23,7 @@ type baseConf struct {
 	redisConf RedisConf
 	dbConf    DbConf
 	mqConf    MqConf
+	kafkaConf KafkaConf
 }
 
 var BaseConf = &baseConf{}
@@ -42,8 +45,9 @@ func (ConfHandle *baseConf) Load() {
 		rdConf = &RedisConf{}
 		dbConf = &DbConf{}
 		mqConf = &MqConf{}
+		kafka  = &KafkaConf{}
 	)
-	register(wsConf, rdConf, dbConf, mqConf)
+	register(wsConf, rdConf, dbConf, mqConf, kafka)
 }
 
 func (ConfHandle *baseConf) GetWsConf() WebsocketConf {
@@ -67,6 +71,12 @@ func (ConfHandle *baseConf) GetMqConf() MqConf {
 	ConfHandle.lock.RLock()
 	defer ConfHandle.lock.RUnlock()
 	return ConfHandle.mqConf
+}
+
+func (ConfHandle *baseConf) GetKafkaConf() KafkaConf {
+	ConfHandle.lock.RLock()
+	defer ConfHandle.lock.RUnlock()
+	return ConfHandle.kafkaConf
 }
 
 func match(confMap confHandle) (*ini.Section, error) {
