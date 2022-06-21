@@ -40,14 +40,14 @@ func init() {
 func (ConfHandle *baseConf) Load() {
 	BaseConf.lock.Lock()
 	defer BaseConf.lock.Unlock()
-	var (
-		wsConf = &WebsocketConf{}
-		rdConf = &RedisConf{}
-		dbConf = &DbConf{}
-		mqConf = &MqConf{}
-		kafka  = &KafkaConf{}
-	)
-	register(wsConf, rdConf, dbConf, mqConf, kafka)
+	var confArray = []confHandle{
+		&WebsocketConf{},
+		&RedisConf{},
+		&DbConf{},
+		&MqConf{},
+		&KafkaConf{},
+	}
+	register(confArray)
 }
 
 func (ConfHandle *baseConf) GetWsConf() WebsocketConf {
@@ -90,7 +90,7 @@ func match(confMap confHandle) (*ini.Section, error) {
 	return cfg.Section(iniSection), nil
 }
 
-func register(confMapArray ...confHandle) {
+func register(confMapArray []confHandle) {
 	for _, confMap := range confMapArray {
 		confMap.register()
 	}

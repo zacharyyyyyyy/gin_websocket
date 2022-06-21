@@ -14,7 +14,7 @@ const (
 )
 
 func SelectMultiByStatusAndLimitAndOffset(status, limit, offset int) (res []*model.Taskqueue, err error) {
-	db := model.DbConn.GetSlaveDb().Table(_taskqueueTable)
+	db := model.DbConn.GetMasterDb().Table(_taskqueueTable)
 	if err = db.Where("status = ? AND begin_time < ?", status, time.Now().Unix()).Order("begin_time ASC").Limit(limit).Offset(offset).Find(&res).Error; err != nil {
 		return nil, err
 	}

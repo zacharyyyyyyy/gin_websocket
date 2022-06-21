@@ -17,5 +17,6 @@ const (
 )
 
 const (
-	TypeMq = "mq"
+	TypeMq    = "mq"
+	TypeKafka = "kafka"
 )

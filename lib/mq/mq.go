@@ -20,8 +20,6 @@ type mqClient struct {
 	exchange *amqp.Channel
 }
 
-type SendMap map[string]interface{}
-
 var MqServer mqClient = newClient()
 
 var (
@@ -91,7 +89,7 @@ func (client mqClient) close() {
 	_ = client.client.Close()
 }
 
-func (client mqClient) Send(data SendMap, qKey string) error {
+func (client mqClient) Send(data map[string]interface{}, qKey string) error {
 	var err error
 	for tryTimes := 0; tryTimes < retryTimes; tryTimes++ {
 		err = client.send(data, qKey)
@@ -110,23 +108,23 @@ func (client mqClient) Send(data SendMap, qKey string) error {
 }
 
 //for taskqueue
-func (client mqClient) TaskSingleSend(data SendMap, qKey string) error {
+func (client mqClient) TaskSingleSend(data map[string]interface{}, qKey string) error {
 	return client.send(data, qKey)
 }
 
-func (client mqClient) send(data SendMap, qKey string) error {
+func (client mqClient) send(data map[string]interface{}, qKey string) error {
 	var (
 		err      error
 		done     = make(chan struct{}, 1)
 		semaChan = make(chan struct{}, 1)
 	)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	dataBytes, _ := jsoniter.Marshal(data)
 	go func() {
 		if !sema.TryAcquire(goroutineWeight) {
 			semaChan <- struct{}{}
 			return
 		}
+		dataBytes, _ := jsoniter.Marshal(data)
 		err = client.exchange.Publish(
 			"amq.direct",
 			qKey,

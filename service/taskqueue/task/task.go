@@ -27,6 +27,7 @@ type Task struct {
 var (
 	taskHandlerNotFoundErr = errors.New("消费者未注册")
 	timeOutErr             = errors.New("任务超时")
+	semaphoreFullErr       = errors.New("taskqueue限制的gouroutine数已满")
 )
 
 var (
@@ -70,8 +71,11 @@ func start() {
 					logger.TaskQueue.Error(wrapErr.Error())
 				} else {
 					if !sema.TryAcquire(taskGoroutineEach) {
+						logger.TaskQueue.Error(semaphoreFullErr.Error())
 						continue
 					}
+					//获取到信号则判定task正在运行
+					handler.runningTask()
 					go func(taskHandler Task, taskId int) {
 						runtimeErr := taskHandler.run()
 						if runtimeErr != nil {
@@ -102,7 +106,6 @@ func (task Task) run() error {
 	var runtimeErr error
 	ctx, cancel := context.WithTimeout(context.Background(), eachTaskTime)
 	done := make(chan struct{}, 1)
-	task.runningTask()
 	go func() {
 		err := task.TaskHandler.Exec(task.param)
 		if err != nil {

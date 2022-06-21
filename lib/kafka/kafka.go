@@ -1,11 +1,19 @@
 package kafka
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"time"
+
 	"gin_websocket/lib/config"
 	"gin_websocket/lib/logger"
+	"gin_websocket/model"
+	"gin_websocket/service/taskqueue"
+
 	"github.com/Shopify/sarama"
 	jsoniter "github.com/json-iterator/go"
+	"golang.org/x/sync/semaphore"
 )
 
 type kafkaClient struct {
@@ -13,6 +21,21 @@ type kafkaClient struct {
 }
 
 var KafkaServer kafkaClient = newClient()
+
+var (
+	TimeoutErr              = errors.New("服务超时，请稍后重试")
+	InsufficientResourceErr = errors.New("服务忙碌，请稍后重试")
+)
+
+var (
+	retryTimes = 3
+	timeout    = 5 * time.Second
+	//限制goroutine数量
+	goroutineLimit  int64  = 300
+	goroutineWeight int64  = 1
+	sema                   = semaphore.NewWeighted(goroutineLimit)
+	Topic           string = "sms"
+)
 
 func newClient() kafkaClient {
 	var err error
@@ -30,36 +53,69 @@ func newClient() kafkaClient {
 	saramaConfig.Net.MaxOpenRequests = 1
 	producer, err := sarama.NewAsyncProducer([]string{kafkaConf.Host + ":" + kafkaConf.Port}, saramaConfig)
 	if err != nil {
-		logger.Runtime.Error(fmt.Errorf("producer_test create producer error :%s\n", err.Error()).Error())
+		logger.Runtime.Error(fmt.Errorf("kafka create producer error :%s\n", err.Error()).Error())
 		return kafkaClient{}
 	}
 	return kafkaClient{producer: producer}
 }
 
-func (client kafkaClient) Send(topic string, data map[string]interface{}) (offset int64, time int64, err error) {
+func (client kafkaClient) Send(topic string, key string, data map[string]interface{}) (offset int64, sendTime int64, err error) {
+	for tryTimes := 0; tryTimes < retryTimes; tryTimes++ {
+		offset, sendTime, err = client.send(topic, key, data)
+		if err == nil {
+			break
+		}
+		if tryTimes == retryTimes {
+			//超过次数放入taskqueue作处理
+			taskMap := make(map[string]interface{})
+			taskMap["data"] = data
+			taskMap["topic"] = topic
+			taskMap["key"] = key
+			taskqueue.AddTask(model.TypeKafka, taskMap, int(time.Now().Add(30*time.Second).Unix()))
+		}
+	}
+	return
+}
+
+func (client kafkaClient) TaskSingleSend(topic string, key string, data map[string]interface{}) (offset int64, sendTime int64, err error) {
+	return client.send(topic, key, data)
+}
+
+func (client kafkaClient) send(topic string, key string, data map[string]interface{}) (offset int64, sendTime int64, err error) {
 	// send message
-	msg := &sarama.ProducerMessage{
-		Topic:     "kafka_go_test",
-		Key:       sarama.StringEncoder("go_test"),
-		Partition: 0,
-	}
-	msgContent := make(map[string]interface{}, 0)
-	msgContent["content"] = "test"
-	msgContent["type"] = "normal"
-	byteContent, _ := jsoniter.Marshal(msgContent)
-	msg.Value = sarama.ByteEncoder(byteContent)
-	fmt.Printf("input [%s]\n", msgContent)
-	// send to chain
-
-	client.producer.Input() <- msg
-
+	var semaChan = make(chan struct{}, 1)
+	offset, sendTime = 0, 0
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	go func() {
+		if !sema.TryAcquire(goroutineWeight) {
+			semaChan <- struct{}{}
+			return
+		}
+		msg := &sarama.ProducerMessage{
+			Topic: topic,
+			Key:   sarama.StringEncoder(key),
+		}
+		if key == "" {
+			msg.Partition = 0
+		}
+		byteContent, _ := jsoniter.Marshal(data)
+		msg.Value = sarama.ByteEncoder(byteContent)
+		client.producer.Input() <- msg
+	}()
 	select {
+	case <-ctx.Done():
+		err = TimeoutErr
+	case <-semaChan:
+		cancel()
+		err = InsufficientResourceErr
 	case suc := <-client.producer.Successes():
-		return suc.Offset, suc.Timestamp.Unix(), nil
+		cancel()
+		offset, sendTime = suc.Offset, suc.Timestamp.Unix()
 	case fail := <-client.producer.Errors():
-		fmt.Printf("err: %s\n", fail.Err.Error())
-		return 0, 0, fail.Err
+		cancel()
+		err = fail.Err
 	}
+	return offset, sendTime, err
 }
 
 func (client kafkaClient) Close() {

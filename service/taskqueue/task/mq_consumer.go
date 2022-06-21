@@ -5,16 +5,16 @@ import (
 	"gin_websocket/model"
 )
 
-type mqhandler struct {
+type mqHandler struct {
 }
 
 func init() {
 	registerTask(model.TypeMq, func() Handler {
-		return mqhandler{}
+		return mqHandler{}
 	})
 }
 
-func (handler mqhandler) Exec(param map[string]interface{}) error {
-	err := mq.MqServer.TaskSingleSend(mq.SendMap(param), mq.QueueKeySms)
+func (handler mqHandler) Exec(param map[string]interface{}) error {
+	err := mq.MqServer.TaskSingleSend(param["data"].(map[string]interface{}), param["qKey"].(string))
 	return err
 }
