@@ -9,7 +9,9 @@ import (
 	"testing"
 
 	"gin_websocket/router"
+
 	jsoniter "github.com/json-iterator/go"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSyncTestHandler(t *testing.T) {
@@ -90,12 +92,18 @@ func TestAddAdmin(t *testing.T) {
 			writer := httptest.NewRecorder()
 			routerTest.ServeHTTP(writer, req)
 			//code 判断
-			assert.Equal(t, http.StatusOK, writer.Code)
+			Convey("status", t, func() {
+				So(writer.Code, ShouldEqual, http.StatusOK)
+			})
 			//msg 判断
 			var resp map[string]interface{}
 			err := jsoniter.Unmarshal([]byte(writer.Body.String()), &resp)
-			assert.NilError(t, err)
-			assert.Equal(t, "成功", resp["message"])
+			Convey("err", t, func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("msg", t, func() {
+				So(resp["message"], ShouldEqual, "成功")
+			})
 
 		})
 	}

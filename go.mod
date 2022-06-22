@@ -15,6 +15,7 @@ require (
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.19.0 // indirect
+	github.com/smartystreets/goconvey v1.7.2 // indirect
 	github.com/storyicon/grbac v0.0.0-20200224041032-a0461737df7e
 	github.com/streadway/amqp v1.0.0
 	github.com/ugorji/go v1.2.6 // indirect
