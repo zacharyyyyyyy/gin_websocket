@@ -39,7 +39,6 @@ func PanicResponse(c *gin.Context, err error, code int, msg string) {
 		code = http.StatusInternalServerError
 	}
 	logger.Api.Error(err.Error())
-	//TODO
 	baseController := ResponseStruct{Code: code, C: c}
 	if msg != "" {
 		baseController.SetMessage(msg)

@@ -3,8 +3,10 @@ module gin_websocket
 go 1.15
 
 require (
+	bou.ke/monkey v1.0.2
 	github.com/BurntSushi/toml v1.0.0 // indirect
 	github.com/Shopify/sarama v1.34.1
+	github.com/agiledragon/gomonkey v2.0.2+incompatible
 	github.com/gin-contrib/gzip v0.0.5
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-ini/ini v1.66.3
@@ -15,7 +17,7 @@ require (
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.19.0 // indirect
-	github.com/smartystreets/goconvey v1.7.2 // indirect
+	github.com/smartystreets/goconvey v1.7.2
 	github.com/storyicon/grbac v0.0.0-20200224041032-a0461737df7e
 	github.com/streadway/amqp v1.0.0
 	github.com/ugorji/go v1.2.6 // indirect
