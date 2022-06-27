@@ -1,11 +1,14 @@
 package redis
 
 import (
-	"bou.ke/monkey"
 	"fmt"
+	"testing"
+	"time"
+
+	"bou.ke/monkey"
 	"github.com/go-redis/redis"
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
+	"go.uber.org/goleak"
 )
 
 var redisDb redisClient
@@ -24,9 +27,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestRedis(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreTopFunction("gopkg.in/natefinch/lumberjack%2ev2.(*Logger).millRun"), goleak.IgnoreTopFunction("github.com/go-redis/redis/internal/pool.(*ConnPool).reaper"))
 	redisDb = newClient()
 	Convey("testing redis set", t, func() {
-		So(redisDb.Set("test", "1111", 0), ShouldBeNil)
+		So(redisDb.Set("test", "1111", 5*time.Second), ShouldBeNil)
 		Convey("testing redis get", func() {
 			val, err := redisDb.Get("test")
 			So(err, ShouldBeNil)
