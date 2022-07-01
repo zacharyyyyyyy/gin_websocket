@@ -1,0 +1,18 @@
+services:
+  app:
+    container_name: go_server
+    image: go_server
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "2g"
+        max-file: "10"
+    ports:
+      - ${PORT}:8086
+    volumes:
+      - ${WORK_DIR}/conf:/go/gin_websocket/conf
+      - ${WORK_DIR}/log:/go/gin_websocket/log
+    environment:
+      TZ: 'Asia/Shanghai'
+    restart: always
+version: "2"
