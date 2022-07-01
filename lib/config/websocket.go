@@ -1,10 +1,14 @@
 package config
 
 type WebsocketConf struct {
-	PingLastTimeSec   uint
-	ChatLastTimeSec   uint
+	//ping包过期时间
+	PingLastTimeSec uint
+	//最后一次信息过期时间 用于超时清理连接
+	ChatLastTimeSec uint
+	//连接清理定时
 	CleanLimitTimeSec uint
-	MaxConnection     uint
+	//最大连接数
+	MaxConnection uint
 }
 
 func (WsConf WebsocketConf) getPath() string {
