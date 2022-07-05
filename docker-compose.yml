@@ -5,7 +5,7 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "2g"
+        max-size: "200m"
         max-file: "10"
     ports:
       - ${PORT}:8086
