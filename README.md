@@ -17,7 +17,7 @@ docker build -t go_server .
 ````
 docker-compose up -d
 ````
-####使用流程
+#### 使用流程
 后台
 * 调用 /admin/login登录
 * 调用 /admin/ws 注册当前管理员，接受websocket消息
@@ -29,10 +29,13 @@ api
 * 调用 /api/link  进行链接
 
 websocket传参格式
+```
+type目前为ping与chat两种
+```
 ```json
 {
   "content": "test",
-  "type": "chat"  //type目前为ping与chat两种
+  "type": "chat"  
 }
 ```
 
