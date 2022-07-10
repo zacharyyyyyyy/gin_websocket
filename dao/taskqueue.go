@@ -41,9 +41,9 @@ func DelTask(id int) error {
 	return nil
 }
 
-func DelayTask(id int, time time.Time) error {
+func DelayTask(id int, time time.Time, err error) error {
 	db := model.DbConn.GetMasterDb().Table(_taskqueueTable)
-	if err := db.Where("id = ?", id).Updates(map[string]interface{}{"status": model.StatusNotBegin, "begin_time": time.Unix(), "retry_times": gorm.Expr("retry_times + ?", 1)}).Error; err != nil {
+	if err := db.Where("id = ?", id).Updates(map[string]interface{}{"status": model.StatusNotBegin, "begin_time": time.Unix(), "retry_times": gorm.Expr("retry_times + ?", 1), "fail_msg": err.Error()}).Error; err != nil {
 		return err
 	}
 	return nil
