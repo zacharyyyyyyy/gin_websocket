@@ -38,6 +38,13 @@ type目前为ping与chat两种
   "type": "chat"  
 }
 ```
+登录帐号
+```json
+{
+  "username": "admin",
+  "password": "c3677a175c42af337e386a2ab992a312942fc6cc"
+}
+```
 
 
  
