@@ -110,7 +110,7 @@ func (task Task) run() error {
 		err := task.TaskHandler.Exec(task.param)
 		if err != nil {
 			runtimeErr = err
-			task.delayTask(time.Now().Add(taskTimeDelay))
+			task.delayTask(time.Now().Add(taskTimeDelay), err)
 		} else {
 			task.delTask()
 		}
@@ -131,8 +131,8 @@ func (task Task) delTask() {
 	_ = dao.DelTask(task.taskId)
 }
 
-func (task Task) delayTask(time time.Time) {
-	_ = dao.DelayTask(task.taskId, time)
+func (task Task) delayTask(time time.Time, err error) {
+	_ = dao.DelayTask(task.taskId, time, err)
 }
 
 func (task Task) runningTask() {
