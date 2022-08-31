@@ -52,5 +52,6 @@ func initAdminRoute(r *gin.Engine) {
 		adminRoute.GET("/perf/heap", perf.HeapPprof)
 		adminRoute.GET("/perf/mutex", perf.MutexPprof)
 		adminRoute.GET("/perf/threadcreate", perf.ThreadCreatePprof)
+		adminRoute.POST("/perf/write", perf.WritePprof)
 	}
 }
