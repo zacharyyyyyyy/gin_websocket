@@ -90,7 +90,7 @@ func (l *Logger) locateField() zap.Field {
 	fileLine := ""
 	fileLineSlice := make([]string, 16)
 	for i := 0; i < 10; i++ {
-		if _, file, line, ok := runtime.Caller(i); ok {
+		if _, file, line, ok := runtime.Caller(i); ok && file != "" {
 			if binPath, err := os.Getwd(); err == nil {
 				file = strings.ReplaceAll(file, binPath, "")
 			}
