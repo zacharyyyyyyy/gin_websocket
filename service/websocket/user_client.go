@@ -182,11 +182,12 @@ func (user *UserClient) ping() {
 }
 
 //超时关闭
-func (user *UserClient) timeout() error {
+func (user *UserClient) timeout() (close bool, err error) {
 	if user.LastTime.Unix() < (time.Now().Unix()-int64(wsConf.PingLastTimeSec)) || user.ChatLastTime.Unix() < (time.Now().Unix()-int64(wsConf.ChatLastTimeSec)) {
 		if err := user.Close(); err != nil {
-			return ClientNotFoundErr
+			return false, ClientNotFoundErr
 		}
+		return true, nil
 	}
-	return nil
+	return false, nil
 }
