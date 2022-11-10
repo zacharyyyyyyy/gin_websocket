@@ -38,7 +38,7 @@ var (
 	taskHandlerMap = make(map[string]func() Handler)
 	//限制任务goroutine数
 	taskGoroutineMaxCount int64 = 100
-	taskGoroutineEach     int64 = 0
+	taskGoroutineEach     int64 = 1
 	sema                        = semaphore.NewWeighted(taskGoroutineMaxCount)
 )
 
