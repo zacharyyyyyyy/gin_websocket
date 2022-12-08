@@ -177,7 +177,11 @@ func (cusServ *CustomerServiceClient) closeSelecting() {
 }
 
 func (cusServ *CustomerServiceClient) GetAllBindUser() map[WsKey]*UserClient {
-	return cusServ.bindUserClientSlice
+	resultMap := make(map[WsKey]*UserClient)
+	for wxKey, userClient := range cusServ.bindUserClientSlice {
+		resultMap[wxKey] = userClient
+	}
+	return resultMap
 }
 
 func (cusServ *CustomerServiceClient) bindUser(user *UserClient) error {
