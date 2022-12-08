@@ -52,19 +52,20 @@ func cleanClient(ctx context.Context, Cont *WsContainer, timeDuration time.Durat
 		case <-timer.C:
 			for _, userClient := range Cont.WebSocketClientMap {
 				ip := userClient.Ip
-				err := userClient.timeout()
+				closeStatus, err := userClient.timeout()
 				if err != nil {
 					errString := fmt.Sprintf("websocket timeout func err:%s", err)
 					logger.Service.Error(errString)
 					continue
 				}
-				err = Cont.Remove(userClient)
-				if err != nil {
-					errString := fmt.Sprintf("websocket remove func err:%s", err)
-					logger.Service.Error(errString)
-					continue
+				if closeStatus {
+					err = Cont.Remove(userClient)
+					if err != nil {
+						errString := fmt.Sprintf("websocket remove func err:%s", err)
+						logger.Service.Error(errString)
+						continue
+					}
 				}
-
 				logger.Service.Info(fmt.Sprintf("websocket clear, ip:%s", ip))
 			}
 		case <-ctx.Done():

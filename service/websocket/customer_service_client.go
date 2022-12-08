@@ -168,9 +168,8 @@ func (cusServ *CustomerServiceClient) closeSelecting() {
 		Type:           closeType,
 	}
 	_ = selectingUserClient.send(closeMsg)
-	selectingUserClient.unbind()
 	//用户取消关联
-	cusServ.bindUserClientSlice[cusServ.selectingUserClientKey].unbind()
+	selectingUserClient.unbind()
 	delete(cusServ.bindUserClientSlice, cusServ.selectingUserClientKey)
 	cusServ.selectingUserClientKey = ""
 

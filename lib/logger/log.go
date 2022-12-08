@@ -88,7 +88,7 @@ func (l *Logger) Error(msg string) {
 
 func (l *Logger) locateField() zap.Field {
 	fileLine := ""
-	fileLineSlice := make([]string, 16)
+	fileLineSlice := make([]string, 0)
 	for i := 0; i < 10; i++ {
 		if _, file, line, ok := runtime.Caller(i); ok && file != "" {
 			if binPath, err := os.Getwd(); err == nil {
