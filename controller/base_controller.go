@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"net/http"
+
 	"gin_websocket/lib/logger"
+
 	"github.com/gin-gonic/gin"
 	jsoniter "github.com/json-iterator/go"
-	"net/http"
 )
 
 const (
@@ -68,7 +70,9 @@ func (resp *ResponseStruct) JsonResponse() {
 		JsonCode:    resp.Code,
 	}
 	jsonStr, _ := jsoniter.Marshal(jsonResp)
-	resp.C.String(resp.Code, string(jsonStr))
+	if !resp.C.Writer.Written() {
+		resp.C.String(resp.Code, string(jsonStr))
+	}
 }
 
 func (resp *ResponseStruct) SetMessage(msg string) {

@@ -1,10 +1,12 @@
 package global_middleware
 
 import (
+	"net/http"
+
 	"gin_websocket/controller"
 	"gin_websocket/lib/logger"
+
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 func HttpRecover(c *gin.Context) {

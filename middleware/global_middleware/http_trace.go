@@ -69,5 +69,6 @@ func HttpTrace(c *gin.Context) {
 
 	c.Next()
 	httpTracer.AddTag(tracer.Tag{Key: tracer.TagHttpStatusCode, Value: strconv.Itoa(c.Writer.Status())})
+	httpTracer.AddResultCode(c.Writer.Status())
 	httpTracer.Finish()
 }

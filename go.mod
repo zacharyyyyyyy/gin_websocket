@@ -6,6 +6,7 @@ require (
 	bou.ke/monkey v1.0.2
 	github.com/BurntSushi/toml v1.0.0 // indirect
 	github.com/Shopify/sarama v1.34.1
+	github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5 // indirect
 	github.com/agiledragon/gomonkey v2.0.2+incompatible
 	github.com/gin-contrib/gzip v0.0.5
 	github.com/gin-gonic/gin v1.7.7

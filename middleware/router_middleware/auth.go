@@ -1,13 +1,13 @@
 package router_middleware
 
 import (
-	"gin_websocket/controller"
-	"gin_websocket/lib/session"
 	"net/http"
 	"strconv"
 	"time"
 
+	"gin_websocket/controller"
 	"gin_websocket/dao"
+	"gin_websocket/lib/session"
 
 	"github.com/gin-gonic/gin"
 	"github.com/storyicon/grbac"
