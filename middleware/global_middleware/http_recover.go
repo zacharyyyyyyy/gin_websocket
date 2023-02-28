@@ -32,6 +32,8 @@ func hookRecover(e interface{}) {
 }
 
 func hookTrampoline(e interface{}) {
+	//占空间用 防止内联优化
+	hookTrampoline(e)
 }
 
 //go:linkname gopanic runtime.gopanic
