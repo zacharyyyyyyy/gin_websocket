@@ -3,6 +3,7 @@ package global_middleware
 import (
 	"net/http"
 	"runtime"
+	_ "unsafe"
 
 	"gin_websocket/controller"
 	"gin_websocket/lib/logger"
