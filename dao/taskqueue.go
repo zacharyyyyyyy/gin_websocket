@@ -30,7 +30,7 @@ func AddTask(typeString string, param map[string]interface{}, beginTime int) err
 		CreateTime: int(time.Now().Unix()),
 		BeginTime:  beginTime,
 	}
-	return db.Create(saveTask).Error
+	return db.Create(&saveTask).Error
 }
 
 func DelTask(id int) error {

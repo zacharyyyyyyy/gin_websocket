@@ -43,7 +43,7 @@ func AddAuth(role, auth int) error {
 		Auth:       auth,
 		CreateTime: int(time.Now().Unix()),
 	}
-	if err := db.Create(authMap).Error; err != nil {
+	if err := db.Create(&authMap).Error; err != nil {
 		return err
 	}
 	return nil

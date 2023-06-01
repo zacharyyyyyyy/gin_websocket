@@ -57,7 +57,7 @@ func AddAdmin(username, name, password string, role int) error {
 		Role:       role,
 		CreateTime: int(time.Now().Unix()),
 	}
-	return db.Create(saveAdmin).Error
+	return db.Create(&saveAdmin).Error
 }
 
 func EditAdmin(username, name, password string, role, id int) error {

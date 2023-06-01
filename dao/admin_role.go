@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"fmt"
 	"time"
 
 	"gin_websocket/model"
@@ -13,9 +14,12 @@ const (
 func ExistsRole(roleId int) bool {
 	db := model.DbConn.GetSlaveDb().Table(_adminRoleTable)
 	var count int64
+	fmt.Println(1111)
 	if err := db.Where("id = ?", roleId).Count(&count).Error; err != nil {
+		fmt.Println(err)
 		return false
 	}
+	fmt.Println(count)
 	if count > 0 {
 		return true
 	}
@@ -38,7 +42,7 @@ func AddRole(name, describe string) error {
 	if describe != "" {
 		role.Describe = describe
 	}
-	if err := db.Create(role).Error; err != nil {
+	if err := db.Create(&role).Error; err != nil {
 		return err
 	}
 	return nil
