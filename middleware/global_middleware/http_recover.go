@@ -1,11 +1,9 @@
 package global_middleware
 
 import (
-	"net/http"
 	"runtime"
 	_ "unsafe"
 
-	"gin_websocket/controller"
 	"gin_websocket/lib/logger"
 
 	"github.com/brahma-adshonor/gohook"
@@ -23,8 +21,7 @@ func HttpRecover(c *gin.Context) {
 func hookRecover(e interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Runtime.Error(err.(error).Error())
-			controller.PanicResponse(localContext, err.(error), http.StatusInternalServerError, "")
+			logger.Runtime.Error(err.(string))
 			localContext.Abort()
 			runtime.Goexit()
 		}
