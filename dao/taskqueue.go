@@ -1,12 +1,14 @@
 package dao
 
 import (
-	"gorm.io/gorm"
+	"errors"
 	"time"
 
 	"gin_websocket/model"
 
 	jsoniter "github.com/json-iterator/go"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -49,9 +51,21 @@ func DelayTask(id int, time time.Time, err error) error {
 	return nil
 }
 func UpdateStatusToRunning(id int) error {
+	var taskQueue *model.Taskqueue
 	db := model.DbConn.GetMasterDb().Table(_taskqueueTable)
-	if err := db.Where("id = ?", id).Update("status", model.StatusRunning).Error; err != nil {
+	tx := db.Begin()
+	if err := tx.Where("id = ?", id).Clauses(clause.Locking{Strength: "UPDATE"}).Find(&taskQueue).Error; err != nil {
+		tx.Rollback()
 		return err
 	}
+	if taskQueue.Status != model.StatusNotBegin {
+		tx.Rollback()
+		return errors.New("task running")
+	}
+	if err := tx.Where("id = ?", id).Update("status", model.StatusRunning).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
 	return nil
 }

@@ -28,6 +28,7 @@ var (
 	taskHandlerNotFoundErr = errors.New("消费者未注册")
 	timeOutErr             = errors.New("任务超时")
 	semaphoreFullErr       = errors.New("taskqueue限制的gouroutine数已满")
+	taskRunningErr         = errors.New("任务正在运行")
 )
 
 var (
@@ -74,8 +75,15 @@ func start() {
 						logger.TaskQueue.Error(semaphoreFullErr.Error())
 						continue
 					}
-					//获取到信号则判定task正在运行
-					handler.runningTask()
+					//获取到信号则判断task是否运行
+					err = handler.runningTask()
+					if err != nil {
+						wrapErr := fmt.Errorf("%w(id:%d,type:%s)", err, taskStruct.Id, taskStruct.Type)
+						logger.TaskQueue.Error(wrapErr.Error())
+						//任务已运行 释放信号
+						sema.Release(taskGoroutineEach)
+						continue
+					}
 					go func(taskHandler Task, taskId int) {
 						runtimeErr := taskHandler.run()
 						if runtimeErr != nil {
@@ -135,6 +143,10 @@ func (task Task) delayTask(time time.Time, err error) {
 	_ = dao.DelayTask(task.taskId, time, err)
 }
 
-func (task Task) runningTask() {
-	_ = dao.UpdateStatusToRunning(task.taskId)
+func (task Task) runningTask() error {
+	err := dao.UpdateStatusToRunning(task.taskId)
+	if err != nil {
+		return taskRunningErr
+	}
+	return nil
 }

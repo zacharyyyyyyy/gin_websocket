@@ -22,7 +22,7 @@ func GetAllAuthMapByRole(limit, offset, role int) (res []*model.AdminAuthMapDeta
 	db := model.DbConn.GetSlaveDb().Table(_adminAuthMapTable)
 	db.Joins("join admin_auth on admin_auth.id = admin_auth_map.auth").Joins("join admin_role on admin_role.id = admin_auth_map.role")
 	db.Select("admin_auth_map.role, admin_auth_map.auth, admin_role.name as role_name, admin_role.describe as role_describe, admin_auth.name as auth_name")
-	if err = db.Where("role = ?", role).Limit(limit).Offset(offset).Find(res).Error; err != nil {
+	if err = db.Where("role = ?", role).Limit(limit).Offset(offset).Find(&res).Error; err != nil {
 		return nil, err
 	}
 	return
