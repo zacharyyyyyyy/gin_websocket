@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/sync/semaphore"
+	"sync"
 	"time"
 
 	"gin_websocket/dao"
@@ -18,11 +19,15 @@ type Handler interface {
 	Exec(param map[string]interface{}) error
 }
 
-type Task struct {
-	taskId      int
-	TaskHandler Handler
-	param       map[string]interface{}
-}
+type (
+	Task struct {
+		taskId      int
+		TaskHandler Handler
+		param       map[string]interface{}
+	}
+	TaskQueueStruct struct {
+	}
+)
 
 var (
 	taskHandlerNotFoundErr = errors.New("消费者未注册")
@@ -41,19 +46,31 @@ var (
 	taskGoroutineMaxCount int64 = 100
 	taskGoroutineEach     int64 = 1
 	sema                        = semaphore.NewWeighted(taskGoroutineMaxCount)
+	taskRegisterLock      sync.Mutex
+	TaskStopChan          = make(chan struct{}, 1)
 )
 
-func Start() {
-	go start()
+func (ts TaskQueueStruct) Start(ctx context.Context) {
+	go start(ctx)
+}
+
+func (ts TaskQueueStruct) Stop() <-chan struct{} {
+	return TaskStopChan
 }
 
 func registerTask(taskName string, f func() Handler) {
+	taskRegisterLock.Lock()
+	defer taskRegisterLock.Unlock()
 	taskHandlerMap[taskName] = f
 }
 
-func start() {
+func start(ctx context.Context) {
+	logger.Service.Info("taskqueue Func start")
 	timeTicker := time.NewTicker(timeDuration)
 	defer timeTicker.Stop()
+	defer func() {
+		logger.Service.Info("taskqueue Func stop")
+	}()
 	for {
 		select {
 		case <-timeTicker.C:
@@ -93,6 +110,19 @@ func start() {
 					}(handler, taskStruct.Id)
 				}
 			}
+		case <-ctx.Done():
+			timeTicker.Stop()
+			now := time.Now()
+			for {
+				//任务超时 或 无任务时 退出
+				if sema.TryAcquire(taskGoroutineMaxCount) || time.Now().Unix()-now.Unix() == int64(eachTaskTime) {
+					break
+				}
+
+				time.Sleep(1 * time.Second)
+			}
+			TaskStopChan <- struct{}{}
+			return
 		}
 	}
 }

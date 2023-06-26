@@ -11,7 +11,11 @@ import (
 	"time"
 )
 
-type WsKey string
+type (
+	WsKey    string
+	WsStruct struct {
+	}
+)
 
 var (
 	WsContainerHandle              = userStart()
@@ -35,18 +39,32 @@ var (
 	CloseErr                   = errors.New("链接已关闭")
 )
 
-var wsConf config.WebsocketConf = config.BaseConf.GetWsConf()
+var (
+	wsConf     = config.BaseConf.GetWsConf()
+	WsStopChan = make(chan struct{}, 1)
+)
 
-func Start() {
-	ctx, _ := context.WithCancel(context.Background())
+func (ws *WsStruct) Start(serviceCtx context.Context) {
+	start(serviceCtx)
+}
+
+func (ws *WsStruct) Stop() <-chan struct{} {
+	return WsStopChan
+}
+
+func start(ctx context.Context) {
 	limitTime := time.Duration(wsConf.CleanLimitTimeSec) * time.Second
 	go cleanClient(ctx, WsContainerHandle, limitTime)
 }
 
 //定时释放webcoket
 func cleanClient(ctx context.Context, Cont *WsContainer, timeDuration time.Duration) {
+	logger.Service.Info("websocket Cleanclient Func start")
 	timer := time.NewTicker(timeDuration)
 	defer timer.Stop()
+	defer func() {
+		logger.Service.Info("websocket Cleanclient Func close")
+	}()
 	for {
 		select {
 		case <-timer.C:
@@ -69,7 +87,7 @@ func cleanClient(ctx context.Context, Cont *WsContainer, timeDuration time.Durat
 				logger.Service.Info(fmt.Sprintf("websocket clear, ip:%s", ip))
 			}
 		case <-ctx.Done():
-			logger.Service.Info("websocket Cleanclient Func close")
+			WsStopChan <- struct{}{}
 			return
 		}
 	}
