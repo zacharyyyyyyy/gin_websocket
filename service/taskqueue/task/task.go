@@ -115,7 +115,7 @@ func start(ctx context.Context) {
 			now := time.Now()
 			for {
 				//任务超时 或 无任务时 退出
-				if sema.TryAcquire(taskGoroutineMaxCount) || time.Now().Unix()-now.Unix() == int64(eachTaskTime) {
+				if sema.TryAcquire(taskGoroutineMaxCount) || time.Now().Unix()-now.Unix() >= int64(eachTaskTime) {
 					break
 				}
 
