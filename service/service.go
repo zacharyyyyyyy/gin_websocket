@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"gin_websocket/lib/logger"
 	"gin_websocket/service/taskqueue/task"
@@ -34,20 +33,14 @@ func Setup() {
 func Stop(ctx context.Context) {
 	stopChan := make(chan struct{}, 1)
 	go func() {
-		var wg sync.WaitGroup
 		serviceCancelFunc()
 		serviceMapLen := len(serviceHandlerSlice)
 		if serviceMapLen == 0 {
 			return
 		}
-		wg.Add(serviceMapLen)
-		go func() {
-			for _, handler := range serviceHandlerSlice {
-				<-handler.Stop()
-				wg.Done()
-			}
-		}()
-		wg.Wait()
+		for _, handler := range serviceHandlerSlice {
+			<-handler.Stop()
+		}
 		stopChan <- struct{}{}
 	}()
 	select {

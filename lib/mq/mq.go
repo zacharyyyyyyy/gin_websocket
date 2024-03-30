@@ -7,6 +7,7 @@ import (
 
 	"gin_websocket/lib/config"
 	"gin_websocket/lib/logger"
+	"gin_websocket/lib/tools"
 	"gin_websocket/model"
 	"gin_websocket/service/taskqueue"
 	jsoniter "github.com/json-iterator/go"
@@ -107,7 +108,7 @@ func (client mqClient) Send(data map[string]interface{}, qKey string) error {
 	return err
 }
 
-//for taskqueue
+// for taskqueue
 func (client mqClient) TaskSingleSend(data map[string]interface{}, qKey string) error {
 	return client.send(data, qKey)
 }
@@ -120,6 +121,7 @@ func (client mqClient) send(data map[string]interface{}, qKey string) error {
 	)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	go func() {
+		defer tools.RecoverFunc()
 		if !sema.TryAcquire(goroutineWeight) {
 			semaChan <- struct{}{}
 			return
@@ -140,6 +142,7 @@ func (client mqClient) send(data map[string]interface{}, qKey string) error {
 	}()
 	select {
 	case <-ctx.Done():
+		cancel()
 		return TimeoutErr
 	case <-done:
 		cancel()

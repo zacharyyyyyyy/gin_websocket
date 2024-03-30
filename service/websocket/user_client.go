@@ -8,6 +8,7 @@ import (
 
 	"gin_websocket/lib/logger"
 	"gin_websocket/lib/redis"
+	"gin_websocket/lib/tools"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -93,6 +94,7 @@ func (user *UserClient) Receive() error {
 	}
 	user.ChatLastTime = time.Now()
 	go func() {
+		defer tools.RecoverFunc()
 		_ = redis.RedisDb.RPush("websocket_user_"+string(user.Id), "user:"+string(byteMsg))
 		_ = redis.RedisDb.Expire("websocket_user_"+string(user.Id), 100*time.Second)
 	}()
@@ -181,7 +183,7 @@ func (user *UserClient) ping() {
 	user.LastTime = time.Now()
 }
 
-//超时关闭
+// 超时关闭
 func (user *UserClient) timeout() (close bool, err error) {
 	if user.LastTime.Unix() < (time.Now().Unix()-int64(wsConf.PingLastTimeSec)) || user.ChatLastTime.Unix() < (time.Now().Unix()-int64(wsConf.ChatLastTimeSec)) {
 		return true, nil

@@ -10,6 +10,7 @@ import (
 
 	"gin_websocket/dao"
 	"gin_websocket/lib/logger"
+	"gin_websocket/lib/tools"
 	"gin_websocket/model"
 
 	jsoniter "github.com/json-iterator/go"
@@ -30,10 +31,12 @@ type (
 )
 
 var (
-	taskHandlerNotFoundErr = errors.New("消费者未注册")
-	timeOutErr             = errors.New("任务超时")
-	semaphoreFullErr       = errors.New("taskqueue限制的gouroutine数已满")
-	taskRunningErr         = errors.New("任务正在运行")
+	taskQueueErr           = errors.New("taskqueue err")
+	taskHandlerNotFoundErr = fmt.Errorf("%w:消费者未注册", taskQueueErr)
+	timeOutErr             = fmt.Errorf("%w:任务超时", taskQueueErr)
+	semaphoreFullErr       = fmt.Errorf("%w:taskqueue限制的gouroutine数已满", taskQueueErr)
+	taskRunningErr         = fmt.Errorf("%w:任务正在运行", taskQueueErr)
+	taskFailErr            = fmt.Errorf("%w:任务发生panic", taskQueueErr)
 )
 
 var (
@@ -145,6 +148,11 @@ func (task Task) run() error {
 	ctx, cancel := context.WithTimeout(context.Background(), eachTaskTime)
 	done := make(chan struct{}, 1)
 	go func() {
+		//发生panic 默认任务失败，有事务需回滚，延迟一次任务
+		defer func() {
+			tools.RecoverFunc()
+			task.delayTask(time.Now().Add(taskTimeDelay), taskFailErr)
+		}()
 		err := task.TaskHandler.Exec(task.param)
 		if err != nil {
 			runtimeErr = err
@@ -158,6 +166,7 @@ func (task Task) run() error {
 	}()
 	select {
 	case <-ctx.Done():
+		cancel()
 		return timeOutErr
 	case <-done:
 		cancel()

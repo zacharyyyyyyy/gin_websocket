@@ -7,6 +7,7 @@ import (
 
 	"gin_websocket/lib/config"
 	"gin_websocket/lib/logger"
+	"gin_websocket/lib/tools"
 	"gin_websocket/model"
 	"gin_websocket/service/taskqueue"
 
@@ -82,6 +83,7 @@ func (client kafkaClient) send(topic string, key string, data map[string]interfa
 	var semaChan = make(chan struct{}, 1)
 	offset, sendTime = 0, 0
 	go func() {
+		defer tools.RecoverFunc()
 		if !sema.TryAcquire(goroutineWeight) {
 			semaChan <- struct{}{}
 			return
