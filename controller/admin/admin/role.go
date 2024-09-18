@@ -40,11 +40,11 @@ func GetAllRole(c *gin.Context) {
 
 func AddRole(c *gin.Context) {
 	param := new(struct {
-		Name     string `form:"name" binding:"required,min=1" msg:"name为字符串且不能为空"`
-		Describe string `form:"describe" binding:"min=1" msg:"describe为字符串"`
+		Name     string `form:"name" binding:"required,min=1"`
+		Describe string `form:"describe" binding:"min=1"`
 	})
 	if err := c.ShouldBind(param); err != nil {
-		errMsg := validator.GetValidMsg(err, param)
+		errMsg := validator.GetValidMsg(err)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}
@@ -58,12 +58,12 @@ func AddRole(c *gin.Context) {
 
 func EditRole(c *gin.Context) {
 	param := new(struct {
-		Name     string `form:"name" binding:"required,min=1" msg:"name为字符串且不能为空"`
-		Describe string `form:"describe" binding:"min=1" msg:"describe为字符串"`
-		Id       int    `form:"id" binding:"required,min=1" msg:"id为整型且不能为空"`
+		Name     string `form:"name" binding:"required,min=1"`
+		Describe string `form:"describe" binding:"min=1"`
+		Id       int    `form:"id" binding:"required,min=1"`
 	})
 	if err := c.ShouldBind(param); err != nil {
-		errMsg := validator.GetValidMsg(err, param)
+		errMsg := validator.GetValidMsg(err)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}
@@ -81,10 +81,10 @@ func EditRole(c *gin.Context) {
 
 func DelRole(c *gin.Context) {
 	param := new(struct {
-		Id int `form:"id" binding:"required,min=1" msg:"id为整型且不能为空"`
+		Id int `form:"id" binding:"required,min=1"`
 	})
 	if err := c.ShouldBind(param); err != nil {
-		errMsg := validator.GetValidMsg(err, param)
+		errMsg := validator.GetValidMsg(err)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}
@@ -94,12 +94,12 @@ func DelRole(c *gin.Context) {
 
 func GetAllRoleAuth(c *gin.Context) {
 	param := new(struct {
-		Pn   int `form:"pn" binding:"required,min=1" msg:"pn为整型且最小值为1"`
-		Pc   int `form:"pc" binding:"required,min=1" msg:"pc为整型且最小值为1"`
-		Role int `form:"role" binding:"required,min=1" msg:"role为整型且最小值为1"`
+		Pn   int `form:"pn" binding:"required,min=1"`
+		Pc   int `form:"pc" binding:"required,min=1"`
+		Role int `form:"role" binding:"required,min=1"`
 	})
 	if err := c.ShouldBind(param); err != nil {
-		errMsg := validator.GetValidMsg(err, param)
+		errMsg := validator.GetValidMsg(err)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}
@@ -142,11 +142,11 @@ func GetAllRoleAuth(c *gin.Context) {
 
 func AddAuthMap(c *gin.Context) {
 	param := new(struct {
-		Role int `form:"role" binding:"required,min=1" msg:"role为整型且不能为空"`
-		Auth int `form:"auth" binding:"min=1" msg:"auth为整型且不能为空"`
+		Role int `form:"role" binding:"required,min=1"`
+		Auth int `form:"auth" binding:"min=1"`
 	})
 	if err := c.ShouldBind(param); err != nil {
-		errMsg := validator.GetValidMsg(err, param)
+		errMsg := validator.GetValidMsg(err)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}
@@ -157,11 +157,11 @@ func AddAuthMap(c *gin.Context) {
 
 func EditAuthMap(c *gin.Context) {
 	param := new(struct {
-		Role int `form:"role" binding:"required,min=1" msg:"role为整型且不能为空"`
-		Auth int `form:"auth" binding:"min=1" msg:"auth为整型且不能为空"`
+		Role int `form:"role" binding:"required,min=1"`
+		Auth int `form:"auth" binding:"min=1"`
 	})
 	if err := c.ShouldBind(param); err != nil {
-		errMsg := validator.GetValidMsg(err, param)
+		errMsg := validator.GetValidMsg(err)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}
@@ -171,11 +171,11 @@ func EditAuthMap(c *gin.Context) {
 
 func DelAuthMap(c *gin.Context) {
 	param := new(struct {
-		Role int `form:"role" binding:"required,min=1" msg:"role为整型且不能为空"`
-		Auth int `form:"auth" binding:"min=1" msg:"auth为整型且不能为空"`
+		Role int `form:"role" binding:"required,min=1"`
+		Auth int `form:"auth" binding:"min=1"`
 	})
 	if err := c.ShouldBind(param); err != nil {
-		errMsg := validator.GetValidMsg(err, param)
+		errMsg := validator.GetValidMsg(err)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}

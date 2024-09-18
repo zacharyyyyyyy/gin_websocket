@@ -15,11 +15,11 @@ import (
 
 func GetAllAdmin(c *gin.Context) {
 	param := new(struct {
-		Pn int `form:"pn" binding:"required,min=1" msg:"pn为整型且最小值为1"`
-		Pc int `form:"pc" binding:"required,min=1" msg:"pc为整型且最小值为1"`
+		Pn int `form:"pn" binding:"required,min=1"`
+		Pc int `form:"pc" binding:"required,min=1"`
 	})
 	if err := c.ShouldBind(param); err != nil {
-		errMsg := validator.GetValidMsg(err, param)
+		errMsg := validator.GetValidMsg(err)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}
@@ -62,13 +62,13 @@ func GetAllAdmin(c *gin.Context) {
 
 func AddAdmin(c *gin.Context) {
 	param := new(struct {
-		Username string `form:"username" binding:"required,min=2" msg:"username为字符串且不能为空"`
-		Password string `form:"password" binding:"required" msg:"password为字符串型且不能为空"`
-		Name     string `form:"name" binding:"required" msg:"name为字符串型且不能为空"`
-		Role     int    `form:"role" binding:"required,existsAdminRole" msg:"role为整型型且不能为空且必须为存在角色"`
+		Username string `form:"username" binding:"required,min=2"`
+		Password string `form:"password" binding:"required"`
+		Name     string `form:"name" binding:"required"`
+		Role     int    `form:"role" binding:"required,existsAdminRole"`
 	})
 	if err := c.ShouldBind(param); err != nil {
-		errMsg := validator.GetValidMsg(err, param)
+		errMsg := validator.GetValidMsg(err)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}
@@ -81,14 +81,14 @@ func AddAdmin(c *gin.Context) {
 
 func EditAdmin(c *gin.Context) {
 	param := new(struct {
-		Username string `form:"username" binding:"required,min=2" msg:"username为字符串且不能为空"`
-		Password string `form:"password" binding:"required" msg:"password为字符串型且不能为空"`
-		Name     string `form:"name" binding:"required" msg:"name为字符串型且不能为空"`
-		Role     int    `form:"role" binding:"required,existsAdminRole" msg:"role为整型型且不能为空且必须为存在角色"`
-		Id       int    `form:"id" binding:"required" msg:"id为整型且不能为空"`
+		Username string `form:"username" binding:"required,min=2"`
+		Password string `form:"password" binding:"required"`
+		Name     string `form:"name" binding:"required"`
+		Role     int    `form:"role" binding:"required,existsAdminRole"`
+		Id       int    `form:"id" binding:"required"`
 	})
 	if err := c.ShouldBind(param); err != nil {
-		errMsg := validator.GetValidMsg(err, param)
+		errMsg := validator.GetValidMsg(err)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}
@@ -101,10 +101,10 @@ func EditAdmin(c *gin.Context) {
 
 func DelAdmin(c *gin.Context) {
 	param := new(struct {
-		Id int `form:"id" binding:"required" msg:"id为整型且不能为空"`
+		Id int `form:"id" binding:"required"`
 	})
 	if err := c.ShouldBind(param); err != nil {
-		errMsg := validator.GetValidMsg(err, param)
+		errMsg := validator.GetValidMsg(err)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}

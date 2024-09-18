@@ -13,11 +13,11 @@ import (
 
 func GetAllAdminAuth(c *gin.Context) {
 	param := new(struct {
-		Pn int `form:"pn" binding:"required,min=1" msg:"pn为整型且最小值为1"`
-		Pc int `form:"pc" binding:"required,min=1" msg:"pc为整型且最小值为1"`
+		Pn int `form:"pn" binding:"required,min=1"`
+		Pc int `form:"pc" binding:"required,min=1"`
 	})
 	if err := c.ShouldBind(param); err != nil {
-		errMsg := validator.GetValidMsg(err, param)
+		errMsg := validator.GetValidMsg(err)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}

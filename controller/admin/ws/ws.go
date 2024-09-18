@@ -35,10 +35,10 @@ func Cancel(c *gin.Context) {
 
 func ServiceLink(c *gin.Context) {
 	param := new(struct {
-		WsKey string `form:"ws_key" binding:"required,min=1" msg:"ws_key为字符串且不能为空"`
+		WsKey string `form:"ws_key" binding:"required,min=1"`
 	})
 	if err := c.BindQuery(param); err != nil {
-		errMsg := validator.GetValidMsg(err, param)
+		errMsg := validator.GetValidMsg(err)
 		controller.PanicResponse(c, err, http.StatusInternalServerError, errMsg)
 		return
 	}
